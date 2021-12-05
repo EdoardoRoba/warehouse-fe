@@ -22,8 +22,8 @@ function Home(props) {
     };
     const getLibraryStructure = async () => {
         const data = await getDocs(libraryCollectionRef) //returns all the books of the collection
+        console.log("Library: ", data)
         setLibrary(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })))
-        console.log("Library: ", library)
     };
     // whenever the page reloads (renders), the hook "useEffect" is called
     React.useEffect(() => {
@@ -54,7 +54,20 @@ function Home(props) {
     }
 
     const getLibrary = () => {
-        console.log("Ciao")
+        var cols = []
+        var rows = []
+        if (library.length > 0) {
+            for (var c = 0; c < library[0].columns; c++) {
+                for (var r = 0; r < library[0].rows; r++) {
+                    rows.push(<span>row {r + 1}</span>)
+                }
+                cols.push(<span>column {c + 1}</span>)
+            }
+        }
+        return <div>
+            <div>{rows}</div>
+            <div>{cols}</div>
+        </div>
     }
 
     return (
@@ -82,6 +95,7 @@ function Home(props) {
             <div>
                 {getLibrary()}
             </div>
+
         </div >
     );
 }

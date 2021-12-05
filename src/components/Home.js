@@ -54,19 +54,17 @@ function Home(props) {
     }
 
     const getLibrary = () => {
-        var cols = []
-        var rows = []
+        var structure = []
         if (library.length > 0) {
             for (var c = 0; c < library[0].columns; c++) {
                 for (var r = 0; r < library[0].rows; r++) {
-                    rows.push(<span>row {r + 1}</span>)
+                    structure.push(<span>row {r + 1}</span>)
                 }
-                cols.push(<span>column {c + 1}</span>)
+                structure.push(<span>column {c + 1}</span>)
             }
         }
         return <div>
-            <div>{rows}</div>
-            <div>{cols}</div>
+            <div>{structure}</div>
         </div>
     }
 

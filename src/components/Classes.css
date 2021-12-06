@@ -1,0 +1,16 @@
+.layout {
+    background-color: transparent;
+    color: black;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+}
+
+.hovered:hover{
+    cursor: pointer;
+}
+
+.shelf {
+    color: white;
+    border: 1px solid yellow
+}

@@ -1,11 +1,25 @@
 import axios from "axios";
-import React from "react";
+import * as React from "react";
 import { db } from '../firebase-config'
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore'
 import Button from '@mui/material/Button';
-import GridLayout from 'react-grid-layout';
-import ArrowUpwardIcon from '@material-ui/icons/ArrowUpward';
+import Grid from '@mui/material/Grid';
+import Paper from '@mui/material/Paper';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import Modal from '@mui/material/Modal';
+import { styled } from '@mui/material/styles';
+import Switch from '@mui/material/Switch';
+import Grow from '@mui/material/Grow';
+import FormControlLabel from '@mui/material/FormControlLabel';
 import './Classes.css'
+
+const Item = styled(Paper)(({ theme }) => ({
+    ...theme.typography.body2,
+    padding: theme.spacing(1),
+    textAlign: 'center',
+    color: theme.palette.text.secondary,
+}));
 
 function Home(props) {
     const [books, setBooks] = React.useState([])
@@ -16,19 +30,34 @@ function Home(props) {
     const [column, setColumn] = React.useState("")
     const [library, setLibrary] = React.useState(null)
     const [layout, setLayout] = React.useState(null)
-    const [layoutGrid, setLayoutGrid] = React.useState(null)
     const [rowsLibrary, setRowsLibrary] = React.useState([])
     const [columnsLibrary, setColumnsLibrary] = React.useState([])
+    const [open, setOpen] = React.useState(false);
+    const [booksInShelf, setBooksInShelf] = React.useState([])
+    const [shelfRowSelected, setShelfRowSelected] = React.useState("")
+    const [shelfColumnSelected, setShelfColumnSelected] = React.useState("")
+    const [addBookFlag, setAddBookFlag] = React.useState(false);
+    const [updateBookFlag, setUpdateBookFlag] = React.useState(false);
+    const [deleteBookFlag, setDeleteBookFlag] = React.useState(false);
+    // const handleOpen = () => setOpen(true);
+
     const booksCollectionRef = collection(db, "mybooks")
     const libraryCollectionRef = collection(db, "library")
 
     const alphabet = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "Z"]
 
-    // const layout = [
-    //     { i: 'a', x: 0, y: 0, w: 1, h: 2, static: true },
-    //     { i: 'b', x: 1, y: 0, w: 3, h: 2, minW: 2, maxW: 4 },
-    //     { i: 'c', x: 4, y: 0, w: 1, h: 2 }
-    // ];
+    const style = {
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        width: 400,
+        bgcolor: 'background.paper',
+        border: '2px solid #000',
+        boxShadow: 24,
+        p: 4,
+    };
+
     // whenever the page reloads (renders), the hook "useEffect" is called
     React.useEffect(() => {
         getBooks()
@@ -46,8 +75,12 @@ function Home(props) {
     }, [layout])
 
     React.useEffect(() => {
-        console.log("layoutGrid: ", layoutGrid)
-    }, [layoutGrid])
+        console.log("books: ", books)
+    }, [books])
+
+    React.useEffect(() => {
+        console.log("booksInShelf: ", booksInShelf)
+    }, [booksInShelf])
 
     React.useEffect(() => {
         console.log("library: ", library)
@@ -61,6 +94,24 @@ function Home(props) {
         console.log("rowsLibrary: ", rowsLibrary)
     }, [rowsLibrary])
 
+    const handleChangeAddBook = () => {
+        setAddBookFlag((prev) => !prev);
+        setUpdateBookFlag(false);
+        setDeleteBookFlag(false);
+    };
+
+    const handleChangeUpdateBook = () => {
+        setUpdateBookFlag((prev) => !prev);
+        setAddBookFlag(false);
+        setDeleteBookFlag(false);
+    };
+
+    const handleChangeDeleteBook = () => {
+        setDeleteBookFlag((prev) => !prev);
+        setAddBookFlag(false);
+        setUpdateBookFlag(false);
+    };
+
     const createLibrary = () => {
         var structure = []
         var structureGrid = []
@@ -69,18 +120,43 @@ function Home(props) {
         if (library.length > 0) {
             for (var c = 0; c < library[0].columns; c++) {
                 rows = []
+                structureGrid[c] = []
+                structure[c] = []
                 for (var r = 0; r < library[0].rows; r++) {
-                    structure.push({ row: r, column: c, selected: false, key: r.toString() + c.toString() })
-                    structureGrid.push({ i: r.toString() + alphabet[c].toString(), x: ((12 - 12 % library[0].columns) / library[0].columns) * c, y: r, w: 2, h: 1, static: true })
+                    structure[c].push({ row: r, column: c, selected: false, key: r.toString() + alphabet[c].toString(), color: '#964b00c7' })
+                    // ((12 - 12 % library[0].columns) / library[0].columns) * c
                     rows.push(r)
                 }
-                cols.push(alphabet[c])
+                cols.push(c)
             }
         }
         setLayout(structure)
-        setLayoutGrid(structureGrid)
         setRowsLibrary(rows)
         setColumnsLibrary(cols)
+    }
+
+    const handleClose = (l) => {
+        setOpen(false)
+        setBooksInShelf([])
+        l.map((col) => {
+            col.map((row) => {
+                row.color = "#964b00c7"
+            })
+        })
+        setLayout(l)
+    };
+
+    const showShelf = (row, column) => {
+        // I take the books in this shelf
+        const bInShelf = books.filter(book =>
+            book.row == row.toString() && book.column == alphabet[column].toString()
+        )
+        layout[column][row].color = "green"
+        setLayout(layout)
+        setBooksInShelf(bInShelf)
+        setShelfRowSelected(row.toString())
+        setShelfColumnSelected(alphabet[column])
+        setOpen(true)
     }
 
     // GET
@@ -119,16 +195,72 @@ function Home(props) {
 
     return (
         <div style={{ width: '100vw' }}>
-            <div style={{ marginBottom: '4rem' }}>
-                <h3>Insert new book</h3>
-                <input placeholder="title" onChange={(event) => { setTitle(event.target.value) }} />
-                <input placeholder="autore" onChange={(event) => { setAuthor(event.target.value) }} />
-                <input placeholder="genere" onChange={(event) => { setGenre(event.target.value) }} />
-                <input placeholder="mobile" onChange={(event) => { setColumn(event.target.value) }} />
-                <input placeholder="scaffale" onChange={(event) => { setRow(event.target.value) }} />
-                <Button onClick={addBook}>Aggiungi libro</Button>
+            <h1 style={{ fontFamily: 'times' }}>La mia libreria</h1>
+
+            <div style={{ display: 'flex', justifyContent: 'center', textAlign: 'center' }}>
+                <Button variant="outlined" style={{ color: 'white', backgroundColor: 'green', marginRight: '1rem' }} onClick={handleChangeAddBook}>
+                    Aggiungi libro
+                </Button>
+                <Button style={{ color: 'white', backgroundColor: '#ffae1b', marginLeft: '1rem', marginRight: '1rem' }} onClick={handleChangeUpdateBook}>
+                    Aggiorna libro
+                </Button>
+                <Button style={{ color: 'white', backgroundColor: 'red', marginLeft: '1rem' }} onClick={handleChangeDeleteBook}>
+                    Elimina libro
+                </Button>
             </div>
             {
+                (!addBookFlag ? "" : <Box sx={{ display: 'flex', justifyContent: 'center', textAlign: 'center' }}>
+                    <Grow
+                        in={addBookFlag}
+                        style={{ transformOrigin: '0 0 0' }}
+                        {...(addBookFlag ? { timeout: 1000 } : {})}
+                    >
+                        <div style={{ marginTop: '2rem' }}>
+                            <input placeholder="titolo" onChange={(event) => { setTitle(event.target.value) }} />
+                            <input placeholder="autore" onChange={(event) => { setAuthor(event.target.value) }} />
+                            <input placeholder="genere" onChange={(event) => { setGenre(event.target.value) }} />
+                            <input placeholder="mobile" onChange={(event) => { setColumn(event.target.value) }} />
+                            <input placeholder="scaffale" onChange={(event) => { setRow(event.target.value) }} />
+                            <Button variant="outlined" style={{ color: 'white', backgroundColor: 'green' }} onClick={addBook}>Conferma</Button>
+                        </div>
+                    </Grow>
+                </Box>)
+            }
+            {
+                (!updateBookFlag ? "" : <Box sx={{ display: 'flex', justifyContent: 'center', textAlign: 'center' }}>
+                    <Grow
+                        in={updateBookFlag}
+                        style={{ transformOrigin: '0 0 0' }}
+                        {...(updateBookFlag ? { timeout: 1000 } : {})}
+                    >
+                        <div style={{ marginTop: '2rem' }}>
+                            <input placeholder="titolo" onChange={(event) => { setTitle(event.target.value) }} />
+                            <input placeholder="autore" onChange={(event) => { setAuthor(event.target.value) }} />
+                            <input placeholder="genere" onChange={(event) => { setGenre(event.target.value) }} />
+                            <input placeholder="mobile" onChange={(event) => { setColumn(event.target.value) }} />
+                            <input placeholder="scaffale" onChange={(event) => { setRow(event.target.value) }} />
+                            <Button style={{ color: 'white', backgroundColor: '#ffae1b', marginLeft: '1rem' }} onClick={() => { console.log("to update") }}>Conferma</Button>
+                        </div>
+                    </Grow>
+                </Box>)
+            }
+            {
+                (!deleteBookFlag ? "" : <Box sx={{ display: 'flex', justifyContent: 'center', textAlign: 'center' }}>
+                    <Grow
+                        in={deleteBookFlag}
+                        style={{ transformOrigin: '0 0 0' }}
+                        {...(deleteBookFlag ? { timeout: 1000 } : {})}
+                    >
+                        <div style={{ marginTop: '2rem' }}>
+                            <input placeholder="titolo" onChange={(event) => { setTitle(event.target.value) }} />
+                            <Button style={{ color: 'white', backgroundColor: 'red', marginLeft: '1rem' }} onClick={() => { console.log("to update") }}>Conferma</Button>
+                        </div>
+                    </Grow>
+                </Box>)
+            }
+
+
+            {/* {
                 books.map((book) => {
                     return <div>
                         <li>{book.title}</li>
@@ -136,50 +268,47 @@ function Home(props) {
                         <Button onClick={() => { deleteBook(book.id, book, "updated") }}>Delete</Button>
                     </div>
                 })
-            }
+            } */}
 
             {/* LIBRARY */}
-            {/* <div>
-                {getLibrary()}
-            </div> */}
-            <div>
+            <h2 style={{ marginTop: '5rem', fontFamily: 'times' }}>Scaffali:</h2>
+            <div style={{ width: '100%', display: 'flex', justifyContent: 'center', textAlign: 'center' }}>
                 {
-                    (layout === null && columnsLibrary.length > 0) ? "" :
-                        <div style={{ display: 'flex', justifyContent: 'center', textAlign: 'center', width: '100%' }}>
-                            {
-                                columnsLibrary.map((c) => {
-                                    return <div className="layout">{c}
-                                        <GridLayout style={{ backgroundColor: '#964b00c7', marginLeft: '0.5rem', marginRight: '0.5rem' }} layout={layoutGrid} cols={12} rowHeight={40} width={12 - 12 % library[0].columns}>
-                                            {
-                                                rowsLibrary.map((r) => {
-                                                    return <div style={{ backgroundColor: 'red' }} className="hovered" key={r.toString() + c.toString()}><ArrowUpwardIcon></ArrowUpwardIcon>{r.toString() + c.toString()}</div>
-                                                })
-                                            }
-                                        </GridLayout>
-                                    </div>
-                                })
-                            }
+                    columnsLibrary.map((c) => {
+                        return <div style={{ marginLeft: '0.5rem', marginRight: '0.5rem' }}><span>{alphabet[c]}</span>
+                            <Grid container>
+                                {
+                                    rowsLibrary.map((r) => {
+                                        return <Grid item xs={12}>
+                                            <Item onClick={() => { showShelf(r, c) }} className="hovered" style={{ backgroundColor: layout[c][r].color }}>{r.toString() + alphabet[c].toString()}</Item>
+                                        </Grid>
+                                    })
+                                }
+                            </Grid>
                         </div>
+                    })
                 }
             </div>
 
-            {/* <GridLayout className="layout" cols={12} rowHeight={30} width={1200}>
-                <div key="a" data-grid={{ x: 0, y: 0, w: 1, h: 2, static: true }}>a</div>
-                <div key="b" data-grid={{ x: 1, y: 0, w: 3, h: 2, minW: 2, maxW: 4 }}>b</div>
-                <div key="c" data-grid={{ x: 4, y: 0, w: 1, h: 2 }}>c</div>
-            </GridLayout> */}
-
-            {/* <div>
-                {
-                    (layout === null) ? "" : <div>
-                        {layout.map((scaffale) => {
-                            return <span>{scaffale.column}</span>
-                        })}
-                    </div>
-                }
-            </div> */}
-
-
+            {/* Modal to show books in the selected shelf */}
+            <Modal
+                open={open}
+                onClose={() => { handleClose(layout) }}
+                aria-labelledby="modal-modal-title"
+                aria-describedby="modal-modal-description"
+            >
+                <Box sx={style}>
+                    <Typography style={{ marginBottom: '2rem' }} id="modal-modal-title" variant="h6" component="h2">
+                        Books in the selected shelf: {shelfColumnSelected + " - " + shelfRowSelected}
+                    </Typography>
+                    {
+                        (booksInShelf.length === 0) ? <span style={{ color: 'grey' }}>No books present in this shelf.</span> :
+                            booksInShelf.map((bis) => {
+                                return <li style={{ marginBottom: '0.5rem' }}>{bis.title} - {bis.author}</li>
+                            })
+                    }
+                </Box>
+            </Modal>
 
         </div >
     );

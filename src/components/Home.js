@@ -173,7 +173,7 @@ function Home(props) {
 
     // POST
     let addBook = () => {
-        addDoc(booksCollectionRef, { title: title, author: author, genre: genre, row: row, column: column })
+        addDoc(booksCollectionRef, { title: title, author: author, genre: genre, row: (parseInt(row) - 1).toString(), column: column })
         getBooks()
     }
 
@@ -280,7 +280,7 @@ function Home(props) {
                                 {
                                     rowsLibrary.map((r) => {
                                         return <Grid item xs={12}>
-                                            <Item onClick={() => { showShelf(r, c) }} className="hovered" style={{ backgroundColor: layout[c][r].color }}>{r.toString() + alphabet[c].toString()}</Item>
+                                            <Item onClick={() => { showShelf(r, c) }} className="hovered" style={{ backgroundColor: layout[c][r].color }}>{(r + 1).toString()}</Item>
                                         </Grid>
                                     })
                                 }
@@ -299,7 +299,7 @@ function Home(props) {
             >
                 <Box sx={style}>
                     <Typography style={{ marginBottom: '2rem' }} id="modal-modal-title" variant="h6" component="h2">
-                        Books in the selected shelf: {shelfColumnSelected + " - " + shelfRowSelected}
+                        Books in the selected shelf: {shelfColumnSelected + " - " + (parseInt(shelfRowSelected) + 1).toString()}
                     </Typography>
                     {
                         (booksInShelf.length === 0) ? <span style={{ color: 'grey' }}>No books present in this shelf.</span> :

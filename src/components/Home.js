@@ -11,6 +11,7 @@ import Modal from '@mui/material/Modal';
 import { styled } from '@mui/material/styles';
 import Switch from '@mui/material/Switch';
 import Grow from '@mui/material/Grow';
+import Alert from '@mui/material/Alert';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import './Classes.css'
 
@@ -39,6 +40,10 @@ function Home(props) {
     const [addBookFlag, setAddBookFlag] = React.useState(false);
     const [updateBookFlag, setUpdateBookFlag] = React.useState(false);
     const [deleteBookFlag, setDeleteBookFlag] = React.useState(false);
+    const [confermaAdd, setConfermaAdd] = React.useState(false);
+    const [confermaUpdate, setConfermaUpdate] = React.useState(false);
+    const [confermaDelete, setConfermaDelete] = React.useState(false);
+    const [notFound, setNotFound] = React.useState("");
     // const handleOpen = () => setOpen(true);
 
     const booksCollectionRef = collection(db, "mybooks")
@@ -63,6 +68,27 @@ function Home(props) {
         getBooks()
         getLibraryStructure()
     }, [])
+
+    React.useEffect(() => {
+        const timer = setTimeout(() => {
+            setConfermaAdd(false)
+        }, 5000);
+        return () => clearTimeout(timer);
+    }, [confermaAdd]);
+
+    React.useEffect(() => {
+        const timer = setTimeout(() => {
+            setConfermaDelete(false)
+        }, 5000);
+        return () => clearTimeout(timer);
+    }, [confermaDelete]);
+
+    React.useEffect(() => {
+        const timer = setTimeout(() => {
+            setNotFound("")
+        }, 5000);
+        return () => clearTimeout(timer);
+    }, [notFound]);
 
     React.useEffect(() => {
         if (library !== null) {
@@ -174,28 +200,54 @@ function Home(props) {
     // POST
     let addBook = () => {
         addDoc(booksCollectionRef, { title: title, author: author, genre: genre, row: (parseInt(row) - 1).toString(), column: column })
+        setConfermaAdd(true)
         getBooks()
     }
 
     // PUT
-    let updateBook = (id, book, newTitle) => {
-        const bookDoc = doc(db, "mybooks", id)
-        // YOU CAN ALSO UPDATE ONLY THE FIELD YOU WANT
-        const newField = { title: newTitle }
-        updateDoc(bookDoc, newField)
+    let updateBook = (title, r, c) => {
+        var bookDoc = ""
+        const newField = { row: r, column: c }
+        books.map((b) => {
+            if (b.title.toUpperCase() === title.toUpperCase()) {
+                bookDoc = doc(db, "mybooks", b.id)
+                setConfermaUpdate(true)
+            }
+        })
+        if (bookDoc !== "") {
+            updateDoc(bookDoc, newField)
+        } else {
+            setConfermaUpdate(false)
+            setNotFound(title)
+        }
+        // const bookDoc = doc(db, "mybooks", id)
+        // // YOU CAN ALSO UPDATE ONLY THE FIELD YOU WANT
+        // const newField = { title: newTitle }
+        // updateDoc(bookDoc, newField)
         getBooks()
     }
 
     // DELETE
-    let deleteBook = (id) => {
-        const userDoc = doc(db, "mybooks", id);
-        deleteDoc(userDoc);
+    let deleteBook = (title) => {
+        var userDoc = ""
+        books.map((b) => {
+            if (b.title.toUpperCase() === title.toUpperCase()) {
+                userDoc = doc(db, "mybooks", b.id);
+                setConfermaDelete(true)
+            }
+        })
+        if (userDoc !== "") {
+            setConfermaDelete(false)
+            deleteDoc(userDoc);
+        } else {
+            setNotFound(title)
+        }
         getBooks()
     }
 
     return (
         <div style={{ width: '100vw' }}>
-            <h1 style={{ fontFamily: 'times' }}>La mia libreria</h1>
+            <h1 style={{ fontFamily: 'times', marginLeft: '1rem' }}>La mia libreria</h1>
 
             <div style={{ display: 'flex', justifyContent: 'center', textAlign: 'center' }}>
                 <Button variant="outlined" style={{ color: 'white', backgroundColor: 'green', marginRight: '1rem' }} onClick={handleChangeAddBook}>
@@ -219,7 +271,7 @@ function Home(props) {
                             <input placeholder="titolo" onChange={(event) => { setTitle(event.target.value) }} />
                             <input placeholder="autore" onChange={(event) => { setAuthor(event.target.value) }} />
                             <input placeholder="genere" onChange={(event) => { setGenre(event.target.value) }} />
-                            <input placeholder="mobile" onChange={(event) => { setColumn(event.target.value) }} />
+                            <input placeholder="mobile" onChange={(event) => { setColumn(event.target.value.toUpperCase()) }} />
                             <input placeholder="scaffale" onChange={(event) => { setRow(event.target.value) }} />
                             <Button variant="outlined" style={{ color: 'white', backgroundColor: 'green' }} onClick={addBook}>Conferma</Button>
                         </div>
@@ -235,11 +287,9 @@ function Home(props) {
                     >
                         <div style={{ marginTop: '2rem' }}>
                             <input placeholder="titolo" onChange={(event) => { setTitle(event.target.value) }} />
-                            <input placeholder="autore" onChange={(event) => { setAuthor(event.target.value) }} />
-                            <input placeholder="genere" onChange={(event) => { setGenre(event.target.value) }} />
                             <input placeholder="mobile" onChange={(event) => { setColumn(event.target.value) }} />
                             <input placeholder="scaffale" onChange={(event) => { setRow(event.target.value) }} />
-                            <Button style={{ color: 'white', backgroundColor: '#ffae1b', marginLeft: '1rem' }} onClick={() => { console.log("to update") }}>Conferma</Button>
+                            <Button style={{ color: 'white', backgroundColor: '#ffae1b', marginLeft: '1rem' }} onClick={() => { updateBook(title, row, column) }}>Conferma</Button>
                         </div>
                     </Grow>
                 </Box>)
@@ -253,7 +303,7 @@ function Home(props) {
                     >
                         <div style={{ marginTop: '2rem' }}>
                             <input placeholder="titolo" onChange={(event) => { setTitle(event.target.value) }} />
-                            <Button style={{ color: 'white', backgroundColor: 'red', marginLeft: '1rem' }} onClick={() => { console.log("to update") }}>Conferma</Button>
+                            <Button style={{ color: 'white', backgroundColor: 'red', marginLeft: '1rem' }} onClick={() => { deleteBook(title) }}>Conferma</Button>
                         </div>
                     </Grow>
                 </Box>)
@@ -270,8 +320,23 @@ function Home(props) {
                 })
             } */}
 
+            <div>
+                {
+                    (!confermaAdd) ? "" : <Alert style={{ width: '50%', marginLeft: 'auto', marginRight: 'auto', marginTop: '1rem' }} severity="success">Libro aggiunto correttamente!</Alert>
+                }
+                {
+                    (!confermaUpdate) ? "" : <Alert style={{ width: '50%', marginLeft: 'auto', marginRight: 'auto', marginTop: '1rem' }} severity="success">Libro aggiornato correttamente!</Alert>
+                }
+                {
+                    (!confermaDelete) ? "" : <Alert style={{ width: '50%', marginLeft: 'auto', marginRight: 'auto', marginTop: '1rem' }} severity="success">Libro eliminato correttamente!</Alert>
+                }
+                {
+                    (notFound === "") ? "" : <Alert style={{ width: '50%', marginLeft: 'auto', marginRight: 'auto', marginTop: '1rem' }} severity="error">Libro {notFound} non trovato! Controlla che il titolo sia scritto correttamente.</Alert>
+                }
+            </div>
+
             {/* LIBRARY */}
-            <h2 style={{ marginTop: '5rem', fontFamily: 'times' }}>Scaffali:</h2>
+            <h2 style={{ marginTop: '5rem', fontFamily: 'times', marginLeft: '1rem' }}>Scaffali:</h2>
             <div style={{ width: '100%', display: 'flex', justifyContent: 'center', textAlign: 'center' }}>
                 {
                     columnsLibrary.map((c) => {
@@ -299,10 +364,10 @@ function Home(props) {
             >
                 <Box sx={style}>
                     <Typography style={{ marginBottom: '2rem' }} id="modal-modal-title" variant="h6" component="h2">
-                        Books in the selected shelf: {shelfColumnSelected + " - " + (parseInt(shelfRowSelected) + 1).toString()}
+                        BLibri nello scaffale: {shelfColumnSelected + " - " + (parseInt(shelfRowSelected) + 1).toString()}
                     </Typography>
                     {
-                        (booksInShelf.length === 0) ? <span style={{ color: 'grey' }}>No books present in this shelf.</span> :
+                        (booksInShelf.length === 0) ? <span style={{ color: 'grey' }}>Nello scaffale selezionato non sono presenti libri.</span> :
                             booksInShelf.map((bis) => {
                                 return <li style={{ marginBottom: '0.5rem' }}>{bis.title} - {bis.author}</li>
                             })

@@ -12,6 +12,10 @@ import { styled } from '@mui/material/styles';
 import Switch from '@mui/material/Switch';
 import Grow from '@mui/material/Grow';
 import Alert from '@mui/material/Alert';
+import Tooltip from '@mui/material/Tooltip';
+import DeleteIcon from '@material-ui/icons/Delete';
+import SystemUpdateAltIcon from '@material-ui/icons/SystemUpdateAlt';
+import IconButton from '@mui/material/IconButton';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import './Classes.css'
 
@@ -29,11 +33,14 @@ function Home(props) {
     const [genre, setGenre] = React.useState("")
     const [row, setRow] = React.useState("")
     const [column, setColumn] = React.useState("")
+    const [rowLayout, setRowLayout] = React.useState("")
+    const [columnLayout, setColumnLayout] = React.useState("")
     const [library, setLibrary] = React.useState(null)
     const [layout, setLayout] = React.useState(null)
     const [rowsLibrary, setRowsLibrary] = React.useState([])
     const [columnsLibrary, setColumnsLibrary] = React.useState([])
     const [open, setOpen] = React.useState(false);
+    const [openLibraryUpdate, setOpenLibraryUpdate] = React.useState(false);
     const [booksInShelf, setBooksInShelf] = React.useState([])
     const [shelfRowSelected, setShelfRowSelected] = React.useState("")
     const [shelfColumnSelected, setShelfColumnSelected] = React.useState("")
@@ -190,6 +197,12 @@ function Home(props) {
         setLayout(l)
     };
 
+    const handleCloseLibraryUpdate = (l) => {
+        setOpenLibraryUpdate(false)
+        getBooks()
+        getLibraryStructure()
+    };
+
     const showShelf = (row, column) => {
         // I take the books in this shelf
         const bInShelf = books.filter(book =>
@@ -264,6 +277,15 @@ function Home(props) {
         getBooks()
     }
 
+    let updateLibraryLayout = (r, c) => {
+        const newField = { rows: r, columns: c }
+        const libraryDoc = doc(db, "library", "2NWAE0SmfJ7ACt4hW9y0")
+        updateDoc(libraryDoc, newField)
+        getBooks()
+        getLibraryStructure()
+        setOpenLibraryUpdate(false)
+    }
+
     // DELETE
     let deleteBook = (title) => {
         var userDoc = ""
@@ -285,9 +307,16 @@ function Home(props) {
 
     return (
         <div style={{ width: '100vw' }}>
-            <h1 style={{ fontFamily: 'times', marginLeft: '1rem' }}>La mia libreria</h1>
-
             <div style={{ display: 'flex', justifyContent: 'center', textAlign: 'center' }}>
+                <h1 style={{ fontFamily: 'times', marginLeft: '1rem', marginRight: 'auto' }}>La mia libreria</h1>
+                <Tooltip style={{ marginRight: '1rem' }} title="Aggiorna struttura libreria">
+                    <IconButton onClick={() => { setOpenLibraryUpdate(true) }}>
+                        <SystemUpdateAltIcon />
+                    </IconButton>
+                </Tooltip>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'center', textAlign: 'center', marginTop: '3rem' }}>
                 <Button variant="outlined" style={{ color: 'white', backgroundColor: 'green', marginRight: '1rem' }} onClick={handleChangeAddBook}>
                     Aggiungi libro
                 </Button>
@@ -312,8 +341,8 @@ function Home(props) {
                             <input placeholder="titolo" onChange={(event) => { setTitle(event.target.value) }} />
                             <input placeholder="autore" onChange={(event) => { setAuthor(event.target.value) }} />
                             <input placeholder="genere" onChange={(event) => { setGenre(event.target.value) }} />
-                            <input placeholder="mobile" onChange={(event) => { setColumn(event.target.value.toUpperCase()) }} />
-                            <input placeholder="scaffale" onChange={(event) => { setRow(event.target.value) }} />
+                            <input placeholder="scaffale" onChange={(event) => { setColumn(event.target.value.toUpperCase()) }} />
+                            <input placeholder="ripiano" onChange={(event) => { setRow(event.target.value) }} />
                             <Button variant="outlined" style={{ color: 'white', backgroundColor: 'green' }} onClick={addBook}>Conferma</Button>
                         </div>
                     </Grow>
@@ -342,8 +371,8 @@ function Home(props) {
                     >
                         <div style={{ marginTop: '2rem' }}>
                             <input placeholder="titolo" onChange={(event) => { setTitle(event.target.value) }} />
-                            <input placeholder="mobile" onChange={(event) => { setColumn(event.target.value) }} />
-                            <input placeholder="scaffale" onChange={(event) => { setRow(event.target.value) }} />
+                            <input placeholder="scaffale" onChange={(event) => { setColumn(event.target.value) }} />
+                            <input placeholder="ripiano" onChange={(event) => { setRow(event.target.value) }} />
                             <Button style={{ color: 'white', backgroundColor: '#ffae1b', marginLeft: '1rem' }} onClick={() => { updateBook(title, row, column) }}>Conferma</Button>
                         </div>
                     </Grow>
@@ -408,14 +437,31 @@ function Home(props) {
             >
                 <Box sx={style}>
                     <Typography style={{ marginBottom: '2rem' }} id="modal-modal-title" variant="h6" component="h2">
-                        Libri nello scaffale: {shelfColumnSelected + " - " + (parseInt(shelfRowSelected) + 1).toString()}
+                        Libri nel ripiano: {shelfColumnSelected + " - " + (parseInt(shelfRowSelected) + 1).toString()}
                     </Typography>
                     {
-                        (booksInShelf.length === 0) ? <span style={{ color: 'grey' }}>Nello scaffale selezionato non sono presenti libri.</span> :
+                        (booksInShelf.length === 0) ? <span style={{ color: 'grey' }}>Nello ripiano selezionato non sono presenti libri.</span> :
                             booksInShelf.map((bis) => {
                                 return <li style={{ marginBottom: '0.5rem' }}>{bis.title} - {bis.author}</li>
                             })
                     }
+                </Box>
+            </Modal>
+
+            {/* Modal to update library structure */}
+            <Modal
+                open={openLibraryUpdate}
+                onClose={() => { handleCloseLibraryUpdate(layout) }}
+                aria-labelledby="modal-modal-title"
+                aria-describedby="modal-modal-description"
+            >
+                <Box sx={style}>
+                    <Typography style={{ marginBottom: '2rem' }} id="modal-modal-title" variant="h6" component="h2">
+                        Seleziona la nuova struttura della tua libreria:
+                    </Typography>
+                    <input placeholder="numero di scaffali" onChange={(event) => { setColumnLayout(event.target.value) }} />
+                    <input placeholder="numero di ripiani" onChange={(event) => { setRowLayout(event.target.value) }} />
+                    <Button style={{ color: 'white', backgroundColor: '#ffae1b', marginLeft: '1rem' }} onClick={() => { updateLibraryLayout(rowLayout, columnLayout) }}>Conferma</Button>
                 </Box>
             </Modal>
 

@@ -38,6 +38,7 @@ function Home(props) {
     const [shelfRowSelected, setShelfRowSelected] = React.useState("")
     const [shelfColumnSelected, setShelfColumnSelected] = React.useState("")
     const [addBookFlag, setAddBookFlag] = React.useState(false);
+    const [getBookFlag, setGetBookFlag] = React.useState(false);
     const [updateBookFlag, setUpdateBookFlag] = React.useState(false);
     const [deleteBookFlag, setDeleteBookFlag] = React.useState(false);
     const [confermaAdd, setConfermaAdd] = React.useState(false);
@@ -75,6 +76,13 @@ function Home(props) {
         }, 5000);
         return () => clearTimeout(timer);
     }, [confermaAdd]);
+
+    React.useEffect(() => {
+        const timer = setTimeout(() => {
+            setConfermaUpdate(false)
+        }, 5000);
+        return () => clearTimeout(timer);
+    }, [confermaUpdate]);
 
     React.useEffect(() => {
         const timer = setTimeout(() => {
@@ -124,18 +132,28 @@ function Home(props) {
         setAddBookFlag((prev) => !prev);
         setUpdateBookFlag(false);
         setDeleteBookFlag(false);
+        setGetBookFlag(false);
+    };
+
+    const handleChangeGetBook = () => {
+        setGetBookFlag((prev) => !prev);
+        setUpdateBookFlag(false);
+        setDeleteBookFlag(false);
+        setAddBookFlag(false);
     };
 
     const handleChangeUpdateBook = () => {
         setUpdateBookFlag((prev) => !prev);
         setAddBookFlag(false);
         setDeleteBookFlag(false);
+        setGetBookFlag(false);
     };
 
     const handleChangeDeleteBook = () => {
         setDeleteBookFlag((prev) => !prev);
         setAddBookFlag(false);
         setUpdateBookFlag(false);
+        setGetBookFlag(false);
     };
 
     const createLibrary = () => {
@@ -196,6 +214,24 @@ function Home(props) {
         console.log("Library: ", data)
         setLibrary(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })))
     };
+    const getBook = async (title) => {
+        let count = 0
+        books.map((b) => {
+            if (b.title.toUpperCase() === title.toUpperCase()) {
+                count = count + 1
+                layout[alphabet.indexOf(b.column)][parseInt(b.row)].color = "green"
+                getBooks()
+                const timer = setTimeout(() => {
+                    layout[alphabet.indexOf(b.column)][parseInt(b.row)].color = "#964b00c7"
+                    getBooks()
+                }, 7000);
+                return () => clearTimeout(timer);
+            }
+        })
+        if (count === 0) {
+            setNotFound(title)
+        }
+    };
 
     // POST
     let addBook = () => {
@@ -207,7 +243,7 @@ function Home(props) {
     // PUT
     let updateBook = (title, r, c) => {
         var bookDoc = ""
-        const newField = { row: r, column: c }
+        const newField = { row: r - 1, column: c }
         books.map((b) => {
             if (b.title.toUpperCase() === title.toUpperCase()) {
                 bookDoc = doc(db, "mybooks", b.id)
@@ -216,6 +252,7 @@ function Home(props) {
         })
         if (bookDoc !== "") {
             updateDoc(bookDoc, newField)
+            getBooks()
         } else {
             setConfermaUpdate(false)
             setNotFound(title)
@@ -237,9 +274,10 @@ function Home(props) {
             }
         })
         if (userDoc !== "") {
-            setConfermaDelete(false)
             deleteDoc(userDoc);
+            getBooks()
         } else {
+            setConfermaDelete(false)
             setNotFound(title)
         }
         getBooks()
@@ -252,6 +290,9 @@ function Home(props) {
             <div style={{ display: 'flex', justifyContent: 'center', textAlign: 'center' }}>
                 <Button variant="outlined" style={{ color: 'white', backgroundColor: 'green', marginRight: '1rem' }} onClick={handleChangeAddBook}>
                     Aggiungi libro
+                </Button>
+                <Button variant="outlined" style={{ color: 'white', backgroundColor: 'blue', marginRight: '1rem' }} onClick={handleChangeGetBook}>
+                    Trova libro
                 </Button>
                 <Button style={{ color: 'white', backgroundColor: '#ffae1b', marginLeft: '1rem', marginRight: '1rem' }} onClick={handleChangeUpdateBook}>
                     Aggiorna libro
@@ -274,6 +315,20 @@ function Home(props) {
                             <input placeholder="mobile" onChange={(event) => { setColumn(event.target.value.toUpperCase()) }} />
                             <input placeholder="scaffale" onChange={(event) => { setRow(event.target.value) }} />
                             <Button variant="outlined" style={{ color: 'white', backgroundColor: 'green' }} onClick={addBook}>Conferma</Button>
+                        </div>
+                    </Grow>
+                </Box>)
+            }
+            {
+                (!getBookFlag ? "" : <Box sx={{ display: 'flex', justifyContent: 'center', textAlign: 'center' }}>
+                    <Grow
+                        in={getBookFlag}
+                        style={{ transformOrigin: '0 0 0' }}
+                        {...(getBookFlag ? { timeout: 1000 } : {})}
+                    >
+                        <div style={{ marginTop: '2rem' }}>
+                            <input placeholder="titolo" onChange={(event) => { setTitle(event.target.value) }} />
+                            <Button variant="outlined" style={{ color: 'white', backgroundColor: 'green' }} onClick={() => { getBook(title) }}>Conferma</Button>
                         </div>
                     </Grow>
                 </Box>)
@@ -308,17 +363,6 @@ function Home(props) {
                     </Grow>
                 </Box>)
             }
-
-
-            {/* {
-                books.map((book) => {
-                    return <div>
-                        <li>{book.title}</li>
-                        <Button onClick={() => { updateBook(book.id, book, "updated") }}>Update</Button>
-                        <Button onClick={() => { deleteBook(book.id, book, "updated") }}>Delete</Button>
-                    </div>
-                })
-            } */}
 
             <div>
                 {
@@ -364,7 +408,7 @@ function Home(props) {
             >
                 <Box sx={style}>
                     <Typography style={{ marginBottom: '2rem' }} id="modal-modal-title" variant="h6" component="h2">
-                        BLibri nello scaffale: {shelfColumnSelected + " - " + (parseInt(shelfRowSelected) + 1).toString()}
+                        Libri nello scaffale: {shelfColumnSelected + " - " + (parseInt(shelfRowSelected) + 1).toString()}
                     </Typography>
                     {
                         (booksInShelf.length === 0) ? <span style={{ color: 'grey' }}>Nello scaffale selezionato non sono presenti libri.</span> :

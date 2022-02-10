@@ -7,11 +7,23 @@ const app = express();
 var cors = require('cors')
 
 app.use(bodyParser.json())
-app.use(function (req, res, next) {
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-    next();
-});
+// app.use(function (req, res, next) {
+//     res.header("Access-Control-Allow-Origin", "*");
+//     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+//     next();
+// });
+const whitelist = ["http://localhost:3000"]
+const corsOptions = {
+    origin: function (origin, callback) {
+        if (!origin || whitelist.indexOf(origin) !== -1) {
+            callback(null, true)
+        } else {
+            callback(new Error("Not allowed by CORS"))
+        }
+    },
+    credentials: true,
+}
+app.use(cors(corsOptions))
 
 // Connect to server
 const dbUri = 'mongodb+srv://admin:bYn3epDI1YwiENB6@cluster0.61jsm.mongodb.net/warehouse?retryWrites=true&w=majority'
@@ -71,7 +83,7 @@ app.put('/updateStructure/:id', (req, res, next) => {
     const body = req.body;
     Structure.findByIdAndUpdate(
         { _id: id },
-        { $set: { body } }
+        body
     ).then((result) => {
         res.send(result)
     }).catch((error) => {

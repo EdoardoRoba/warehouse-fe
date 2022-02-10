@@ -285,7 +285,7 @@ function Home(props) {
     }
 
     let updateLibraryLayout = (r, c) => {
-        const newField = { rows: r, columns: c }
+        const newField = { rows: parseInt(r), columns: parseInt(c) }
         // const libraryDoc = doc(db, "library", "2NWAE0SmfJ7ACt4hW9y0")
         // updateDoc(libraryDoc, newField)
         axios.put("http://localhost:8000/updateStructure/" + structureId, newField).then(response => console.log("Fatto!", response)).catch((error) => { console.log("error: ", error) });

@@ -10,20 +10,21 @@ app.use(bodyParser.json())
 const dbUri = 'mongodb+srv://admin:bYn3epDI1YwiENB6@cluster0.61jsm.mongodb.net/warehouse?retryWrites=true&w=majority'
 mongoose.connect(dbUri, { useNewUrlParser: true, useUnifiedTopology: true }).then(() => {
     console.log("Connected")
-    app.listen(3000)
+    app.listen(8000)
 }).catch((error) => { console.log(error) })
 
 console.log("Hello World!")
 
 app.get('/', (req, res) => {
-    res.redirect('/default')
+    // res.redirect('/default')
+    res.send("Default API. Nothing is happening.")
 })
 
-app.get('/default', (req, res) => {
-    Structure.find().then((result) => {
-        res.send(result);
-    }).catch((error) => { console.log("error: ", error) })
-})
+// app.get('/default', (req, res) => {
+//     Structure.find().then((result) => {
+//         res.send(result);
+//     }).catch((error) => { console.log("error: ", error) })
+// })
 
 // GET/POST
 app.get('/postStructure', (req, res) => {

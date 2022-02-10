@@ -57,6 +57,7 @@ function Home(props) {
     const booksCollectionRef = collection(db, "mybooks")
     const libraryCollectionRef = collection(db, "library")
 
+    const structureId = "62040f12443a3b4085cf4a03"
     const alphabet = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "Z"]
 
     const style = {
@@ -225,7 +226,13 @@ function Home(props) {
     const getLibraryStructure = async () => {
         const data = await getDocs(libraryCollectionRef) //returns all the books of the collection
         console.log("Library: ", data)
-        setLibrary(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })))
+        // setLibrary(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })))
+        axios.get('http://localhost:8000/getStructure')
+            .then(res => {
+                // console.log("RESSS")
+                // console.log(res.data[0])
+                setLibrary(res.data)
+            })
     };
     const getBook = async (title) => {
         let count = 0
@@ -279,8 +286,9 @@ function Home(props) {
 
     let updateLibraryLayout = (r, c) => {
         const newField = { rows: r, columns: c }
-        const libraryDoc = doc(db, "library", "2NWAE0SmfJ7ACt4hW9y0")
-        updateDoc(libraryDoc, newField)
+        // const libraryDoc = doc(db, "library", "2NWAE0SmfJ7ACt4hW9y0")
+        // updateDoc(libraryDoc, newField)
+        axios.put("http://localhost:8000/updateStructure/" + structureId, newField).then(response => console.log("Fatto!", response)).catch((error) => { console.log("error: ", error) });
         getBooks()
         getLibraryStructure()
         setOpenLibraryUpdate(false)

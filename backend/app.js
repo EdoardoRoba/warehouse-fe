@@ -120,3 +120,11 @@ app.post('/tool', (req, res) => {
         console.log("error:", error)
     })
 })
+
+// GET
+app.get('/tool', (req, res) => {
+    // it gets all the element in that document
+    Tool.find().then((result) => {
+        res.send(result);
+    }).catch((error) => { console.log("error: ", error) })
+})

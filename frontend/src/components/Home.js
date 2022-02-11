@@ -218,9 +218,14 @@ function Home(props) {
 
     // GET
     const getBooks = async () => {
-        const data = await getDocs(booksCollectionRef) //returns all the books of the collection
-        console.log("Books: ", data)
-        setBooks(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })))
+        // const data = await getDocs(booksCollectionRef) //returns all the books of the collection
+        // console.log("Books: ", data)
+        // setBooks(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })))
+        axios.get('http://localhost:8050/tool')
+            .then(res => {
+                console.log("Tools: ", res.data)
+                setBooks(res.data)
+            })
     };
     const getLibraryStructure = async () => {
         axios.get('http://localhost:8050/structure')

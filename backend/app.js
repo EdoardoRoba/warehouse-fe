@@ -92,7 +92,6 @@ app.put('/structure/:id', (req, res, next) => {
 //DELETE
 app.delete('/structure/:id', (req, res) => {
     const id = req.params.id;
-    const body = req.body;
     Structure.deleteOne(
         { _id: id }
     ).then((result) => {
@@ -113,7 +112,7 @@ app.post('/tool', (req, res) => {
         column: req.body.column,
         price: req.body.price
     })
-    console.log("tool: ", tool)
+    // console.log("tool: ", tool)
     tool.save().then((result) => {
         res.send(result)
     }).catch((error) => {
@@ -127,4 +126,30 @@ app.get('/tool', (req, res) => {
     Tool.find().then((result) => {
         res.send(result);
     }).catch((error) => { console.log("error: ", error) })
+})
+
+// PUT
+app.put('/tool/:id', (req, res, next) => {
+    const id = req.params.id;
+    const body = req.body;
+    Tool.findByIdAndUpdate(
+        { _id: id },
+        body
+    ).then((result) => {
+        res.send(result)
+    }).catch((error) => {
+        console.log("error: ", error)
+    })
+})
+
+//DELETE
+app.delete('/tool/:id', (req, res) => {
+    const id = req.params.id;
+    Tool.deleteOne(
+        { _id: id }
+    ).then((result) => {
+        res.send(result)
+    }).catch((error) => {
+        console.log("error: ", error)
+    })
 })

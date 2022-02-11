@@ -54,9 +54,6 @@ function Home(props) {
     const [notFound, setNotFound] = React.useState("");
     // const handleOpen = () => setOpen(true);
 
-    const booksCollectionRef = collection(db, "mybooks")
-    // const libraryCollectionRef = collection(db, "library")
-
     const structureId = "6205a1c27f6cda42c2064a0f"
     const alphabet = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "Z"]
 
@@ -218,9 +215,6 @@ function Home(props) {
 
     // GET
     const getBooks = async () => {
-        // const data = await getDocs(booksCollectionRef) //returns all the books of the collection
-        // console.log("Books: ", data)
-        // setBooks(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })))
         axios.get('http://localhost:8050/tool')
             .then(res => {
                 console.log("Tools: ", res.data)
@@ -260,22 +254,24 @@ function Home(props) {
                 setConfermaAdd(true)
                 getBooks()
             });
-        // addDoc(booksCollectionRef, { label: label, quantity: quantity, price: price, row: (parseInt(row) - 1).toString(), column: column })
     }
 
     // PUT
-    let updateBook = (label, r, c) => {
+    let updateBook = (label, q, r, c) => {
         var bookDoc = ""
-        const newField = { row: r - 1, column: c }
+        var bookId = ""
+        const newField = { row: r - 1, column: c, quantity: q }
         books.map((b) => {
             if (b.label.toUpperCase() === label.toUpperCase()) {
-                bookDoc = doc(db, "mybooks", b.id)
-                setConfermaUpdate(true)
+                bookId = b._id
             }
         })
-        if (bookDoc !== "") {
-            updateDoc(bookDoc, newField)
-            getBooks()
+        if (bookId !== "") {
+            axios.put("http://localhost:8050/tool/" + bookId, newField).then(response => {
+                console.log("Fatto!", response)
+                setConfermaUpdate(true)
+                getBooks()
+            }).catch((error) => { console.log("error: ", error) });
         } else {
             setConfermaUpdate(false)
             setNotFound(label)
@@ -285,11 +281,7 @@ function Home(props) {
 
     let updateLibraryLayout = (r, c) => {
         const newField = { rows: parseInt(r), columns: parseInt(c) }
-        // const libraryDoc = doc(db, "library", "2NWAE0SmfJ7ACt4hW9y0")
-        // updateDoc(libraryDoc, newField)
-        console.log("new struct: ", newField)
         axios.put("http://localhost:8050/structure/" + structureId, newField).then(response => {
-            console.log("Fatto!", response)
             getBooks()
             getLibraryStructure()
             setOpenLibraryUpdate(false)
@@ -300,19 +292,18 @@ function Home(props) {
     // DELETE
     let deleteBook = (label) => {
         var userDoc = ""
-        var bookId
+        var bookId = ""
         books.map((b) => {
             if (b.label.toUpperCase() === label.toUpperCase()) {
-                // userDoc = doc(db, "mybooks", b.id);
-                bookId = b.id
-                setConfermaDelete(true)
+                bookId = b._id
             }
         })
-        if (userDoc !== "") {
-            // deleteDoc(userDoc);
-            // getBooks()
-            axios.delete('http://localhost:8050/deleteBook/' + bookId)
-                .then(() => this.setState({ status: 'Delete successful' }));
+        if (bookId !== "") {
+            axios.delete('http://localhost:8050/tool/' + bookId)
+                .then(() => {
+                    setConfermaDelete(true)
+                    getBooks()
+                });
         } else {
             setConfermaDelete(false)
             setNotFound(label)
@@ -386,9 +377,10 @@ function Home(props) {
                     >
                         <div style={{ marginTop: '2rem' }}>
                             <input placeholder="attrezzo" onChange={(event) => { setLabel(event.target.value) }} />
+                            <input placeholder="quantità" onChange={(event) => { setQuantity(event.target.value) }} />
                             <input placeholder="scaffale" onChange={(event) => { setColumn(event.target.value) }} />
                             <input placeholder="ripiano" onChange={(event) => { setRow(event.target.value) }} />
-                            <Button style={{ color: 'white', backgroundColor: '#ffae1b', marginLeft: '1rem' }} onClick={() => { updateBook(label, row, column) }}>Conferma</Button>
+                            <Button style={{ color: 'white', backgroundColor: '#ffae1b', marginLeft: '1rem' }} onClick={() => { updateBook(label, quantity, row, column) }}>Conferma</Button>
                         </div>
                     </Grow>
                 </Box>)

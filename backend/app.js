@@ -1,18 +1,17 @@
 const express = require('express')
 const mongoose = require('mongoose')
 const Structure = require('./models/structure')
+const Tool = require('./models/tool')
 const bodyParser = require('body-parser')
 const app = express();
+const feUrl = "http://localhost:3000"
+const port = 8050
 
 var cors = require('cors')
 
 app.use(bodyParser.json())
-// app.use(function (req, res, next) {
-//     res.header("Access-Control-Allow-Origin", "*");
-//     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-//     next();
-// });
-const whitelist = ["http://localhost:3000"]
+const whitelist = [feUrl]
+// enable CORS policy
 const corsOptions = {
     origin: function (origin, callback) {
         if (!origin || whitelist.indexOf(origin) !== -1) {
@@ -29,7 +28,7 @@ app.use(cors(corsOptions))
 const dbUri = 'mongodb+srv://admin:bYn3epDI1YwiENB6@cluster0.61jsm.mongodb.net/warehouse?retryWrites=true&w=majority'
 mongoose.connect(dbUri, { useNewUrlParser: true, useUnifiedTopology: true }).then(() => {
     console.log("Connected")
-    app.listen(8000)
+    app.listen(port)
 }).catch((error) => { console.log(error) })
 
 console.log("Hello World!")
@@ -45,13 +44,14 @@ app.get('/default', (req, res) => {
     }).catch((error) => { console.log("error: ", error) })
 })
 
-// GET/POST
-app.get('/postStructure', (req, res) => {
+
+// STRUCTURE OF THE WAREHOUSE:
+// POST
+app.post('/structure', (req, res) => {
     const structure = new Structure({
-        columns: 4,
-        rows: 10
+        columns: req.body.columns,
+        rows: req.body.rows
     })
-    // this command saves (POST) the object
     structure.save().then((result) => {
         res.send(result)
     }).catch((error) => {
@@ -60,7 +60,7 @@ app.get('/postStructure', (req, res) => {
 })
 
 // GET
-app.get('/getStructure', (req, res) => {
+app.get('/structure', (req, res) => {
     // it gets all the element in that document
     Structure.find().then((result) => {
         res.send(result);
@@ -68,17 +68,15 @@ app.get('/getStructure', (req, res) => {
 })
 
 //GET SINGLE
-app.get('/getSingleStructure', (req, res) => {
-    // it gets all the element in that document
-    Structure.findById('62040f12443a3b4085cf4a03').then((result) => {
-        res.send(result);
-    }).catch((error) => { console.log("error: ", error) })
-})
+// app.get('/getSingleStructure', (req, res) => {
+//     // it gets all the element in that document
+//     Structure.findById('62040f12443a3b4085cf4a03').then((result) => {
+//         res.send(result);
+//     }).catch((error) => { console.log("error: ", error) })
+// })
 
 // PUT
-app.put('/updateStructure/:id', (req, res, next) => {
-    console.log(req.params.id)
-    console.log(req.body)
+app.put('/structure/:id', (req, res, next) => {
     const id = req.params.id;
     const body = req.body;
     Structure.findByIdAndUpdate(
@@ -88,5 +86,37 @@ app.put('/updateStructure/:id', (req, res, next) => {
         res.send(result)
     }).catch((error) => {
         console.log("error: ", error)
+    })
+})
+
+//DELETE
+app.delete('/structure/:id', (req, res) => {
+    const id = req.params.id;
+    const body = req.body;
+    Structure.deleteOne(
+        { _id: id }
+    ).then((result) => {
+        res.send(result)
+    }).catch((error) => {
+        console.log("error: ", error)
+    })
+})
+
+
+
+// TOOLS
+app.post('/tool', (req, res) => {
+    const tool = new Tool({
+        label: req.body.label,
+        quantity: req.body.quantity,
+        row: req.body.row,
+        column: req.body.column,
+        price: req.body.price
+    })
+    console.log("tool: ", tool)
+    tool.save().then((result) => {
+        res.send(result)
+    }).catch((error) => {
+        console.log("error:", error)
     })
 })

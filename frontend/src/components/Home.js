@@ -28,9 +28,9 @@ const Item = styled(Paper)(({ theme }) => ({
 
 function Home(props) {
     const [books, setBooks] = React.useState([])
-    const [title, setTitle] = React.useState("")
-    const [author, setAuthor] = React.useState("")
-    const [genre, setGenre] = React.useState("")
+    const [label, setLabel] = React.useState("")
+    const [quantity, setQuantity] = React.useState("")
+    const [price, setPrice] = React.useState("")
     const [row, setRow] = React.useState("")
     const [column, setColumn] = React.useState("")
     const [rowLayout, setRowLayout] = React.useState("")
@@ -55,9 +55,9 @@ function Home(props) {
     // const handleOpen = () => setOpen(true);
 
     const booksCollectionRef = collection(db, "mybooks")
-    const libraryCollectionRef = collection(db, "library")
+    // const libraryCollectionRef = collection(db, "library")
 
-    const structureId = "62040f12443a3b4085cf4a03"
+    const structureId = "6205a1c27f6cda42c2064a0f"
     const alphabet = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "Z"]
 
     const style = {
@@ -176,7 +176,6 @@ function Home(props) {
                 structure[c] = []
                 for (var r = 0; r < library[0].rows; r++) {
                     structure[c].push({ row: r, column: c, selected: false, key: r.toString() + alphabet[c].toString(), color: '#964b00c7' })
-                    // ((12 - 12 % library[0].columns) / library[0].columns) * c
                     rows.push(r)
                 }
                 cols.push(c)
@@ -224,20 +223,16 @@ function Home(props) {
         setBooks(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })))
     };
     const getLibraryStructure = async () => {
-        const data = await getDocs(libraryCollectionRef) //returns all the books of the collection
-        console.log("Library: ", data)
-        // setLibrary(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })))
-        axios.get('http://localhost:8000/getStructure')
+        axios.get('http://localhost:8050/structure')
             .then(res => {
-                // console.log("RESSS")
-                // console.log(res.data[0])
+                console.log("Library: ", res.data)
                 setLibrary(res.data)
             })
     };
-    const getBook = async (title) => {
+    const getBook = async (label) => {
         let count = 0
         books.map((b) => {
-            if (b.title.toUpperCase() === title.toUpperCase()) {
+            if (b.label.toUpperCase() === label.toUpperCase()) {
                 count = count + 1
                 layout[alphabet.indexOf(b.column)][parseInt(b.row)].color = "green"
                 getBooks()
@@ -249,23 +244,26 @@ function Home(props) {
             }
         })
         if (count === 0) {
-            setNotFound(title)
+            setNotFound(label)
         }
     };
 
     // POST
     let addBook = () => {
-        addDoc(booksCollectionRef, { title: title, author: author, genre: genre, row: (parseInt(row) - 1).toString(), column: column })
-        setConfermaAdd(true)
-        getBooks()
+        axios.post('http://localhost:8050/tool', { label: label, quantity: quantity, price: price, row: (parseInt(row) - 1).toString(), column: column })
+            .then(response => {
+                setConfermaAdd(true)
+                getBooks()
+            });
+        // addDoc(booksCollectionRef, { label: label, quantity: quantity, price: price, row: (parseInt(row) - 1).toString(), column: column })
     }
 
     // PUT
-    let updateBook = (title, r, c) => {
+    let updateBook = (label, r, c) => {
         var bookDoc = ""
         const newField = { row: r - 1, column: c }
         books.map((b) => {
-            if (b.title.toUpperCase() === title.toUpperCase()) {
+            if (b.label.toUpperCase() === label.toUpperCase()) {
                 bookDoc = doc(db, "mybooks", b.id)
                 setConfermaUpdate(true)
             }
@@ -275,12 +273,8 @@ function Home(props) {
             getBooks()
         } else {
             setConfermaUpdate(false)
-            setNotFound(title)
+            setNotFound(label)
         }
-        // const bookDoc = doc(db, "mybooks", id)
-        // // YOU CAN ALSO UPDATE ONLY THE FIELD YOU WANT
-        // const newField = { title: newTitle }
-        // updateDoc(bookDoc, newField)
         getBooks()
     }
 
@@ -288,27 +282,35 @@ function Home(props) {
         const newField = { rows: parseInt(r), columns: parseInt(c) }
         // const libraryDoc = doc(db, "library", "2NWAE0SmfJ7ACt4hW9y0")
         // updateDoc(libraryDoc, newField)
-        axios.put("http://localhost:8000/updateStructure/" + structureId, newField).then(response => console.log("Fatto!", response)).catch((error) => { console.log("error: ", error) });
-        getBooks()
-        getLibraryStructure()
-        setOpenLibraryUpdate(false)
+        console.log("new struct: ", newField)
+        axios.put("http://localhost:8050/structure/" + structureId, newField).then(response => {
+            console.log("Fatto!", response)
+            getBooks()
+            getLibraryStructure()
+            setOpenLibraryUpdate(false)
+        }).catch((error) => { console.log("error: ", error) });
+
     }
 
     // DELETE
-    let deleteBook = (title) => {
+    let deleteBook = (label) => {
         var userDoc = ""
+        var bookId
         books.map((b) => {
-            if (b.title.toUpperCase() === title.toUpperCase()) {
-                userDoc = doc(db, "mybooks", b.id);
+            if (b.label.toUpperCase() === label.toUpperCase()) {
+                // userDoc = doc(db, "mybooks", b.id);
+                bookId = b.id
                 setConfermaDelete(true)
             }
         })
         if (userDoc !== "") {
-            deleteDoc(userDoc);
-            getBooks()
+            // deleteDoc(userDoc);
+            // getBooks()
+            axios.delete('http://localhost:8050/deleteBook/' + bookId)
+                .then(() => this.setState({ status: 'Delete successful' }));
         } else {
             setConfermaDelete(false)
-            setNotFound(title)
+            setNotFound(label)
         }
         getBooks()
     }
@@ -317,7 +319,7 @@ function Home(props) {
         <div style={{ width: '100vw' }}>
             <div style={{ display: 'flex', justifyContent: 'center', textAlign: 'center' }}>
                 <h1 style={{ fontFamily: 'times', marginLeft: '1rem', marginRight: 'auto' }}>La mia libreria</h1>
-                <Tooltip style={{ marginRight: '1rem' }} title="Aggiorna struttura libreria">
+                <Tooltip style={{ marginRight: '1rem' }} label="Aggiorna struttura libreria">
                     <IconButton onClick={() => { setOpenLibraryUpdate(true) }}>
                         <SystemUpdateAltIcon />
                     </IconButton>
@@ -326,16 +328,16 @@ function Home(props) {
 
             <div style={{ display: 'flex', justifyContent: 'center', textAlign: 'center', marginTop: '3rem' }}>
                 <Button variant="outlined" style={{ color: 'white', backgroundColor: 'green', marginRight: '1rem' }} onClick={handleChangeAddBook}>
-                    Aggiungi libro
+                    Aggiungi attrezzo
                 </Button>
                 <Button variant="outlined" style={{ color: 'white', backgroundColor: 'blue', marginRight: '1rem' }} onClick={handleChangeGetBook}>
-                    Trova libro
+                    Trova attrezzo
                 </Button>
                 <Button style={{ color: 'white', backgroundColor: '#ffae1b', marginLeft: '1rem', marginRight: '1rem' }} onClick={handleChangeUpdateBook}>
-                    Aggiorna libro
+                    Aggiorna attrezzo
                 </Button>
                 <Button style={{ color: 'white', backgroundColor: 'red', marginLeft: '1rem' }} onClick={handleChangeDeleteBook}>
-                    Elimina libro
+                    Elimina attrezzo
                 </Button>
             </div>
             {
@@ -346,9 +348,9 @@ function Home(props) {
                         {...(addBookFlag ? { timeout: 1000 } : {})}
                     >
                         <div style={{ marginTop: '2rem' }}>
-                            <input placeholder="titolo" onChange={(event) => { setTitle(event.target.value) }} />
-                            <input placeholder="autore" onChange={(event) => { setAuthor(event.target.value) }} />
-                            <input placeholder="genere" onChange={(event) => { setGenre(event.target.value) }} />
+                            <input placeholder="attrezzo" onChange={(event) => { setLabel(event.target.value) }} />
+                            <input placeholder="quantità" onChange={(event) => { setQuantity(event.target.value) }} />
+                            <input placeholder="prezzo/pz" onChange={(event) => { setPrice(event.target.value) }} />
                             <input placeholder="scaffale" onChange={(event) => { setColumn(event.target.value.toUpperCase()) }} />
                             <input placeholder="ripiano" onChange={(event) => { setRow(event.target.value) }} />
                             <Button variant="outlined" style={{ color: 'white', backgroundColor: 'green' }} onClick={addBook}>Conferma</Button>
@@ -364,8 +366,8 @@ function Home(props) {
                         {...(getBookFlag ? { timeout: 1000 } : {})}
                     >
                         <div style={{ marginTop: '2rem' }}>
-                            <input placeholder="titolo" onChange={(event) => { setTitle(event.target.value) }} />
-                            <Button variant="outlined" style={{ color: 'white', backgroundColor: 'green' }} onClick={() => { getBook(title) }}>Conferma</Button>
+                            <input placeholder="attrezzo" onChange={(event) => { setLabel(event.target.value) }} />
+                            <Button variant="outlined" style={{ color: 'white', backgroundColor: 'green' }} onClick={() => { getBook(label) }}>Conferma</Button>
                         </div>
                     </Grow>
                 </Box>)
@@ -378,10 +380,10 @@ function Home(props) {
                         {...(updateBookFlag ? { timeout: 1000 } : {})}
                     >
                         <div style={{ marginTop: '2rem' }}>
-                            <input placeholder="titolo" onChange={(event) => { setTitle(event.target.value) }} />
+                            <input placeholder="attrezzo" onChange={(event) => { setLabel(event.target.value) }} />
                             <input placeholder="scaffale" onChange={(event) => { setColumn(event.target.value) }} />
                             <input placeholder="ripiano" onChange={(event) => { setRow(event.target.value) }} />
-                            <Button style={{ color: 'white', backgroundColor: '#ffae1b', marginLeft: '1rem' }} onClick={() => { updateBook(title, row, column) }}>Conferma</Button>
+                            <Button style={{ color: 'white', backgroundColor: '#ffae1b', marginLeft: '1rem' }} onClick={() => { updateBook(label, row, column) }}>Conferma</Button>
                         </div>
                     </Grow>
                 </Box>)
@@ -394,8 +396,8 @@ function Home(props) {
                         {...(deleteBookFlag ? { timeout: 1000 } : {})}
                     >
                         <div style={{ marginTop: '2rem' }}>
-                            <input placeholder="titolo" onChange={(event) => { setTitle(event.target.value) }} />
-                            <Button style={{ color: 'white', backgroundColor: 'red', marginLeft: '1rem' }} onClick={() => { deleteBook(title) }}>Conferma</Button>
+                            <input placeholder="attrezzo" onChange={(event) => { setLabel(event.target.value) }} />
+                            <Button style={{ color: 'white', backgroundColor: 'red', marginLeft: '1rem' }} onClick={() => { deleteBook(label) }}>Conferma</Button>
                         </div>
                     </Grow>
                 </Box>)
@@ -403,16 +405,16 @@ function Home(props) {
 
             <div>
                 {
-                    (!confermaAdd) ? "" : <Alert style={{ width: '50%', marginLeft: 'auto', marginRight: 'auto', marginTop: '1rem' }} severity="success">Libro aggiunto correttamente!</Alert>
+                    (!confermaAdd) ? "" : <Alert style={{ width: '50%', marginLeft: 'auto', marginRight: 'auto', marginTop: '1rem' }} severity="success">Attrezzo aggiunto correttamente!</Alert>
                 }
                 {
-                    (!confermaUpdate) ? "" : <Alert style={{ width: '50%', marginLeft: 'auto', marginRight: 'auto', marginTop: '1rem' }} severity="success">Libro aggiornato correttamente!</Alert>
+                    (!confermaUpdate) ? "" : <Alert style={{ width: '50%', marginLeft: 'auto', marginRight: 'auto', marginTop: '1rem' }} severity="success">Attrezzo aggiornato correttamente!</Alert>
                 }
                 {
-                    (!confermaDelete) ? "" : <Alert style={{ width: '50%', marginLeft: 'auto', marginRight: 'auto', marginTop: '1rem' }} severity="success">Libro eliminato correttamente!</Alert>
+                    (!confermaDelete) ? "" : <Alert style={{ width: '50%', marginLeft: 'auto', marginRight: 'auto', marginTop: '1rem' }} severity="success">Attrezzo eliminato correttamente!</Alert>
                 }
                 {
-                    (notFound === "") ? "" : <Alert style={{ width: '50%', marginLeft: 'auto', marginRight: 'auto', marginTop: '1rem' }} severity="error">Libro {notFound} non trovato! Controlla che il titolo sia scritto correttamente.</Alert>
+                    (notFound === "") ? "" : <Alert style={{ width: '50%', marginLeft: 'auto', marginRight: 'auto', marginTop: '1rem' }} severity="error">Attrezzo {notFound} non trovato! Controlla che il attrezzo sia scritto correttamente.</Alert>
                 }
             </div>
 
@@ -440,17 +442,17 @@ function Home(props) {
             <Modal
                 open={open}
                 onClose={() => { handleClose(layout) }}
-                aria-labelledby="modal-modal-title"
+                aria-labelledby="modal-modal-label"
                 aria-describedby="modal-modal-description"
             >
                 <Box sx={style}>
-                    <Typography style={{ marginBottom: '2rem' }} id="modal-modal-title" variant="h6" component="h2">
+                    <Typography style={{ marginBottom: '2rem' }} id="modal-modal-label" variant="h6" component="h2">
                         Libri nel ripiano: {shelfColumnSelected + " - " + (parseInt(shelfRowSelected) + 1).toString()}
                     </Typography>
                     {
                         (booksInShelf.length === 0) ? <span style={{ color: 'grey' }}>Nello ripiano selezionato non sono presenti libri.</span> :
                             booksInShelf.map((bis) => {
-                                return <li style={{ marginBottom: '0.5rem' }}>{bis.title} - {bis.author}</li>
+                                return <li style={{ marginBottom: '0.5rem' }}>{bis.label} - {bis.quantity}</li>
                             })
                     }
                 </Box>
@@ -460,11 +462,11 @@ function Home(props) {
             <Modal
                 open={openLibraryUpdate}
                 onClose={() => { handleCloseLibraryUpdate(layout) }}
-                aria-labelledby="modal-modal-title"
+                aria-labelledby="modal-modal-label"
                 aria-describedby="modal-modal-description"
             >
                 <Box sx={style}>
-                    <Typography style={{ marginBottom: '2rem' }} id="modal-modal-title" variant="h6" component="h2">
+                    <Typography style={{ marginBottom: '2rem' }} id="modal-modal-label" variant="h6" component="h2">
                         Seleziona la nuova struttura della tua libreria:
                     </Typography>
                     <input placeholder="numero di scaffali" onChange={(event) => { setColumnLayout(event.target.value) }} />

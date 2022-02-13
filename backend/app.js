@@ -185,7 +185,7 @@ app.put('/tool/:id', (req, res, next) => {
                     from: 'idroaltech.bot@gmail.com',
                     to: 'roba.edoardo@gmail.com',
                     subject: 'NOTIFICA QUANTITA\' LIMITE - ' + label.toUpperCase(),
-                    html: resultEmail[0].template.replace("{label}", result.label).replace("{quantity}", quantity).replace("{lowerBound}", result.lowerBound).replace("{price}", result.price).replace("{column}", result.column).replace("{row}", result.row)
+                    html: resultEmail[0].template.replace("{label}", result.label).replace("{label}", result.label).replace("{quantity}", quantity).replace("{lowerBound}", result.lowerBound).replace("{price}", result.price).replace("{column}", result.column).replace("{row}", result.row)
                 };
 
                 transporter.sendMail(mailOptions, function (error, info) {

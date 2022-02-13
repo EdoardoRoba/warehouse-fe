@@ -18,8 +18,6 @@ import MenuIcon from '@material-ui/icons/Menu';
 import SystemUpdateAltIcon from '@material-ui/icons/SystemUpdateAlt';
 import IconButton from '@mui/material/IconButton';
 import FormControlLabel from '@mui/material/FormControlLabel';
-import Warehouse from './Warehouse';
-import History from './History';
 import './Classes.css'
 
 const Item = styled(Paper)(({ theme }) => ({
@@ -29,10 +27,11 @@ const Item = styled(Paper)(({ theme }) => ({
     color: theme.palette.text.secondary,
 }));
 
-function Home(props) {
+function Warehouse(props) {
     const [books, setBooks] = React.useState([])
     const [label, setLabel] = React.useState("")
     const [quantity, setQuantity] = React.useState("")
+    const [user, setUser] = React.useState("")
     const [lowerBound, setLowerBound] = React.useState("")
     const [price, setPrice] = React.useState("")
     const [row, setRow] = React.useState("")
@@ -56,10 +55,12 @@ function Home(props) {
     const [confermaUpdate, setConfermaUpdate] = React.useState(false);
     const [confermaDelete, setConfermaDelete] = React.useState(false);
     const [notFound, setNotFound] = React.useState("");
+    const [showError, setShowError] = React.useState(false);
     // const handleOpen = () => setOpen(true);
 
     const structureId = "6205a1c27f6cda42c2064a0f"
     const alphabet = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "Z"]
+    const beUrl = "http://localhost:8050/"
 
     const style = {
         position: 'absolute',
@@ -106,6 +107,13 @@ function Home(props) {
         }, 5000);
         return () => clearTimeout(timer);
     }, [notFound]);
+
+    React.useEffect(() => {
+        const timer = setTimeout(() => {
+            setShowError(false)
+        }, 5000);
+        return () => clearTimeout(timer);
+    }, [showError]);
 
     React.useEffect(() => {
         if (library !== null) {
@@ -219,14 +227,14 @@ function Home(props) {
 
     // GET
     const getBooks = async () => {
-        axios.get('http://localhost:8050/tool')
+        axios.get(beUrl + 'tool')
             .then(res => {
                 console.log("Tools: ", res.data)
                 setBooks(res.data)
             })
     };
     const getLibraryStructure = async () => {
-        axios.get('http://localhost:8050/structure')
+        axios.get(beUrl + 'structure')
             .then(res => {
                 console.log("Library: ", res.data)
                 setLibrary(res.data)
@@ -253,29 +261,35 @@ function Home(props) {
 
     // POST
     let addBook = () => {
-        axios.post('http://localhost:8050/tool', { label: label, quantity: quantity, lowerBound: lowerBound, price: price, row: (parseInt(row) - 1).toString(), column: column, lastUser: '' })
+        axios.post(beUrl + 'tool', { label: label, quantity: quantity, lowerBound: lowerBound, price: price, row: (parseInt(row) - 1).toString(), column: column, lastUser: '' })
             .then(response => {
                 setConfermaAdd(true)
                 getBooks()
+            }).catch(error => {
+                console.log("error")
+                setShowError(true)
             });
     }
 
     // PUT
-    let updateBook = (label, q, r, c) => {
+    let updateBook = (label, q, user) => {
         var bookDoc = ""
         var bookId = ""
-        const newField = { label: label, row: r - 1, column: c, quantity: q }
+        const newField = { label: label, quantity: q, lastUser: user.toLowerCase() } //, row: r - 1, column: c
         books.map((b) => {
             if (b.label.toUpperCase() === label.toUpperCase()) {
                 bookId = b._id
             }
         })
         if (bookId !== "") {
-            axios.put("http://localhost:8050/tool/" + bookId, newField).then(response => {
+            axios.put(beUrl + "tool/" + bookId, newField).then(response => {
                 console.log("Fatto!", response)
                 setConfermaUpdate(true)
                 getBooks()
-            }).catch((error) => { console.log("error: ", error) });
+            }).catch((error) => {
+                console.log("error: ", error)
+                setShowError(true)
+            });
         } else {
             setConfermaUpdate(false)
             setNotFound(label)
@@ -285,7 +299,7 @@ function Home(props) {
 
     let updateLibraryLayout = (r, c) => {
         const newField = { rows: parseInt(r), columns: parseInt(c) }
-        axios.put("http://localhost:8050/structure/" + structureId, newField).then(response => {
+        axios.put(beUrl + "structure/" + structureId, newField).then(response => {
             getBooks()
             getLibraryStructure()
             setOpenLibraryUpdate(false)
@@ -303,7 +317,7 @@ function Home(props) {
             }
         })
         if (bookId !== "") {
-            axios.delete('http://localhost:8050/tool/' + bookId)
+            axios.delete(beUrl + 'tool/' + bookId)
                 .then(() => {
                     setConfermaDelete(true)
                     getBooks()
@@ -316,29 +330,9 @@ function Home(props) {
     }
 
     return (
-        // <Router>
-        //     <div className="App">
-        //         <ul className="App-header">
-        //             <li>
-        //                 <Link to="/">Home</Link>
-        //             </li>
-        //             <li>
-        //                 <Link to="/warehouse">Magazzino</Link>
-        //             </li>
-        //             <li>
-        //                 <Link to="/history">Storico</Link>
-        //             </li>
-        //         </ul>
-        //         <Routes>
-        //             <Route exact path='/' element={< Home />}></Route>
-        //             <Route exact path='/history' element={< History />}></Route>
-        //             <Route exact path='/warehouse' element={< Warehouse />}></Route>
-        //         </Routes>
-        //     </div>
-        // </Router>
         <div style={{ width: '100vw' }}>
             <div style={{ display: 'flex', justifyContent: 'center', textAlign: 'center' }}>
-                <h1 style={{ fontFamily: 'times', marginLeft: '1rem', marginRight: 'auto' }}>La mia libreria</h1>
+                <h1 style={{ fontFamily: 'times', marginLeft: '1rem', marginRight: 'auto' }}>Magazzino</h1>
                 <Tooltip style={{ marginRight: '1rem' }} label="Aggiorna struttura libreria">
                     <IconButton onClick={() => { setOpenLibraryUpdate(true) }}>
                         <SystemUpdateAltIcon />
@@ -403,9 +397,8 @@ function Home(props) {
                         <div style={{ marginTop: '2rem' }}>
                             <input placeholder="attrezzo" onChange={(event) => { setLabel(event.target.value) }} />
                             <input placeholder="quantità" onChange={(event) => { setQuantity(event.target.value) }} />
-                            <input placeholder="scaffale" onChange={(event) => { setColumn(event.target.value) }} />
-                            <input placeholder="ripiano" onChange={(event) => { setRow(event.target.value) }} />
-                            <Button style={{ color: 'white', backgroundColor: '#ffae1b', marginLeft: '1rem' }} onClick={() => { updateBook(label, quantity, row, column) }}>Conferma</Button>
+                            <input placeholder="utente" onChange={(event) => { setUser(event.target.value) }} />
+                            <Button style={{ color: 'white', backgroundColor: '#ffae1b', marginLeft: '1rem' }} onClick={() => { updateBook(label, quantity, user) }}>Conferma</Button>
                         </div>
                     </Grow>
                 </Box>)
@@ -437,6 +430,9 @@ function Home(props) {
                 }
                 {
                     (notFound === "") ? "" : <Alert style={{ width: '50%', marginLeft: 'auto', marginRight: 'auto', marginTop: '1rem' }} severity="error">Attrezzo {notFound} non trovato! Controlla che il attrezzo sia scritto correttamente.</Alert>
+                }
+                {
+                    (showError === false) ? "" : <Alert style={{ width: '50%', marginLeft: 'auto', marginRight: 'auto', marginTop: '1rem' }} severity="error">Errore. Controlla la connessione o i dati inseriti.</Alert>
                 }
             </div>
 
@@ -489,7 +485,7 @@ function Home(props) {
             >
                 <Box sx={style}>
                     <Typography style={{ marginBottom: '2rem' }} id="modal-modal-label" variant="h6" component="h2">
-                        Seleziona la nuova struttura della tua libreria:
+                        Seleziona la nuova struttura del tuo magazzino:
                     </Typography>
                     <input placeholder="numero di scaffali" onChange={(event) => { setColumnLayout(event.target.value) }} />
                     <input placeholder="numero di ripiani" onChange={(event) => { setRowLayout(event.target.value) }} />
@@ -501,4 +497,4 @@ function Home(props) {
     );
 }
 
-export default Home;
+export default Warehouse;

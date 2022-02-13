@@ -3,6 +3,7 @@ const mongoose = require('mongoose')
 const Structure = require('./models/structure')
 const Tool = require('./models/tool')
 const EmailTemplate = require('./models/emailTemplate')
+const History = require('./models/History')
 const bodyParser = require('body-parser')
 var nodemailer = require('nodemailer');
 const app = express();
@@ -139,13 +140,15 @@ app.post('/tool', (req, res) => {
         lowerBound: req.body.lowerBound,
         row: req.body.row,
         column: req.body.column,
-        price: req.body.price
+        price: req.body.price,
+        lastUser: req.body.lastUser
     })
     // console.log("tool: ", tool)
     tool.save().then((result) => {
         res.send(result)
     }).catch((error) => {
         console.log("error:", error)
+        res.status(400).send(new Error('description'));
     })
 })
 
@@ -218,5 +221,22 @@ app.delete('/tool/:id', (req, res) => {
         res.send(result)
     }).catch((error) => {
         console.log("error: ", error)
+    })
+})
+
+
+// HISTORY
+// POST
+app.post('/history', (req, res) => {
+    const history = new History({
+        user: req.body.user,
+        tool: req.body.tool,
+        quantity: req.body.quantity
+    })
+    // console.log("history: ", history)
+    history.save().then((result) => {
+        res.send(result)
+    }).catch((error) => {
+        console.log("error:", error)
     })
 })

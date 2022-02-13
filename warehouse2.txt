@@ -1,7 +1,7 @@
 warehouse:
 togli ripiano - scaffale -> reparto (elettrico, idraulico, macroelementi)
 reparti e sottoreparti: idraulica: raccorderia ottone, raccorderia ghisa, tubisteria, acqua, ecc (almeno trentina per sottoreparto)
-codici attrezzo esterno
+codici attrezzo esterno (?)
 storico
 email settimanale per cosa c'è in magazzino, lo storico della settimana
 (profilazione - admin può fare tutto - al momento solo admin)
@@ -13,3 +13,4 @@ download del catalogo
 gestione cliente - nome, cognome, ..
 carica documento pdf, excel, ecc
 aggiungere note
+calendario appuntamenti - che si collega alla scheda del cliente

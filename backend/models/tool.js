@@ -26,6 +26,11 @@ const toolSchema = new Schema({
     price: {
         type: Number,
         required: true
+    },
+    lastUser: {
+        type: String,
+        required: true,
+        enum: ['ianni', 'signoriello', 'roba', '']
     }
 }, { timestamps: true });
 

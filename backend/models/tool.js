@@ -19,6 +19,10 @@ const toolSchema = new Schema({
         type: Number,
         required: true
     },
+    lowerBound: {
+        type: Number,
+        required: true
+    },
     price: {
         type: Number,
         required: true

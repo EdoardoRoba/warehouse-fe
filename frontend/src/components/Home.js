@@ -30,6 +30,7 @@ function Home(props) {
     const [books, setBooks] = React.useState([])
     const [label, setLabel] = React.useState("")
     const [quantity, setQuantity] = React.useState("")
+    const [lowerBound, setLowerBound] = React.useState("")
     const [price, setPrice] = React.useState("")
     const [row, setRow] = React.useState("")
     const [column, setColumn] = React.useState("")
@@ -249,7 +250,7 @@ function Home(props) {
 
     // POST
     let addBook = () => {
-        axios.post('http://localhost:8050/tool', { label: label, quantity: quantity, price: price, row: (parseInt(row) - 1).toString(), column: column })
+        axios.post('http://localhost:8050/tool', { label: label, quantity: quantity, lowerBound: lowerBound, price: price, row: (parseInt(row) - 1).toString(), column: column })
             .then(response => {
                 setConfermaAdd(true)
                 getBooks()
@@ -260,7 +261,7 @@ function Home(props) {
     let updateBook = (label, q, r, c) => {
         var bookDoc = ""
         var bookId = ""
-        const newField = { row: r - 1, column: c, quantity: q }
+        const newField = { label: label, row: r - 1, column: c, quantity: q }
         books.map((b) => {
             if (b.label.toUpperCase() === label.toUpperCase()) {
                 bookId = b._id
@@ -346,6 +347,7 @@ function Home(props) {
                         <div style={{ marginTop: '2rem' }}>
                             <input placeholder="attrezzo" onChange={(event) => { setLabel(event.target.value) }} />
                             <input placeholder="quantità" onChange={(event) => { setQuantity(event.target.value) }} />
+                            <input placeholder="quantità minima" onChange={(event) => { setLowerBound(event.target.value) }} />
                             <input placeholder="prezzo/pz" onChange={(event) => { setPrice(event.target.value) }} />
                             <input placeholder="scaffale" onChange={(event) => { setColumn(event.target.value.toUpperCase()) }} />
                             <input placeholder="ripiano" onChange={(event) => { setRow(event.target.value) }} />
@@ -447,7 +449,7 @@ function Home(props) {
                         Libri nel ripiano: {shelfColumnSelected + " - " + (parseInt(shelfRowSelected) + 1).toString()}
                     </Typography>
                     {
-                        (booksInShelf.length === 0) ? <span style={{ color: 'grey' }}>Nello ripiano selezionato non sono presenti libri.</span> :
+                        (booksInShelf.length === 0) ? <span style={{ color: 'grey' }}>Nello ripiano selezionato non sono presenti attrezzi.</span> :
                             booksInShelf.map((bis) => {
                                 return <li style={{ marginBottom: '0.5rem' }}>{bis.label} - {bis.quantity}</li>
                             })

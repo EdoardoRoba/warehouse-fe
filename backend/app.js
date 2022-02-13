@@ -2,6 +2,7 @@ const express = require('express')
 const mongoose = require('mongoose')
 const Structure = require('./models/structure')
 const Tool = require('./models/tool')
+const EmailTemplate = require('./models/emailTemplate')
 const bodyParser = require('body-parser')
 var nodemailer = require('nodemailer');
 const app = express();
@@ -45,6 +46,31 @@ app.get('/default', (req, res) => {
     }).catch((error) => { console.log("error: ", error) })
 })
 
+//EMAIL
+app.post('/sendEmail', (req, res) => {
+    var transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: 'idroaltech.bot@gmail.com',
+            pass: 'uhgsasuiilzrncwb'
+        }
+    });
+
+    var mailOptions = {
+        from: 'idroaltech.bot@gmail.com',
+        to: 'roba.edoardo@gmail.com',
+        subject: 'NOTIFICA',
+        text: 'Prova'
+    };
+
+    transporter.sendMail(mailOptions, function (error, info) {
+        if (error) {
+            console.log(error);
+        } else {
+            res.send('Email sent: ' + info.response)
+        }
+    });
+})
 
 // STRUCTURE OF THE WAREHOUSE:
 // POST
@@ -105,10 +131,12 @@ app.delete('/structure/:id', (req, res) => {
 
 
 // TOOLS
+// POST
 app.post('/tool', (req, res) => {
     const tool = new Tool({
         label: req.body.label,
         quantity: req.body.quantity,
+        lowerBound: req.body.lowerBound,
         row: req.body.row,
         column: req.body.column,
         price: req.body.price
@@ -128,19 +156,57 @@ app.get('/tool', (req, res) => {
         res.send(result);
     }).catch((error) => { console.log("error: ", error) })
 })
+//GET SINGLE
+app.get('/tool/:id', (req, res) => {
+    // it gets all the element in that document
+    Tool.findById(req.params.id).then((result) => {
+        res.send(result);
+    }).catch((error) => { console.log("error: ", error) })
+})
 
 // PUT
 app.put('/tool/:id', (req, res, next) => {
     const id = req.params.id;
     const body = req.body;
-    Tool.findByIdAndUpdate(
-        { _id: id },
-        body
-    ).then((result) => {
-        res.send(result)
-    }).catch((error) => {
-        console.log("error: ", error)
-    })
+    const quantity = req.body.quantity
+    const label = req.body.label
+    Tool.findById(id).then((result) => {
+        if (parseInt(quantity) < result.lowerBound) {
+            EmailTemplate.find().then((resultEmail) => {
+                var transporter = nodemailer.createTransport({
+                    service: 'gmail',
+                    auth: {
+                        user: 'idroaltech.bot@gmail.com',
+                        pass: 'uhgsasuiilzrncwb'
+                    }
+                });
+
+                var mailOptions = {
+                    from: 'idroaltech.bot@gmail.com',
+                    to: 'roba.edoardo@gmail.com',
+                    subject: 'NOTIFICA QUANTITA\' LIMITE - ' + label.toUpperCase(),
+                    html: resultEmail[0].template.replace("{label}", result.label).replace("{quantity}", quantity).replace("{lowerBound}", result.lowerBound).replace("{price}", result.price).replace("{column}", result.column).replace("{row}", result.row)
+                };
+
+                transporter.sendMail(mailOptions, function (error, info) {
+                    if (error) {
+                        console.log(error);
+                    } else {
+                        res.send('Email sent: ' + info.response)
+                    }
+                });
+            }).catch((error) => { console.log("error: ", error) })
+        }
+        Tool.findByIdAndUpdate(
+            { _id: id },
+            body
+        ).then((resultTool) => {
+            res.send(resultTool)
+        }).catch((error) => {
+            console.log("error: ", error)
+        })
+    }).catch((error) => { console.log("error: ", error) })
+
 })
 
 //DELETE

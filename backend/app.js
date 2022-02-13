@@ -3,6 +3,7 @@ const mongoose = require('mongoose')
 const Structure = require('./models/structure')
 const Tool = require('./models/tool')
 const bodyParser = require('body-parser')
+var nodemailer = require('nodemailer');
 const app = express();
 const feUrl = "http://localhost:3000"
 const port = 8050

@@ -139,8 +139,8 @@ app.post('/tool', (req, res) => {
         label: req.body.label,
         quantity: req.body.quantity,
         lowerBound: req.body.lowerBound,
-        row: req.body.row,
-        column: req.body.column,
+        department: req.body.department,
+        subDepartment: req.body.subDepartment,
         price: req.body.price,
         lastUser: req.body.lastUser
     })
@@ -189,7 +189,7 @@ app.put('/tool/:id', (req, res, next) => {
                     from: 'idroaltech.bot@gmail.com',
                     to: 'roba.edoardo@gmail.com', // info@idroaltech.it',
                     subject: 'NOTIFICA QUANTITA\' LIMITE - ' + label.toUpperCase(),
-                    html: resultEmail[0].template.replace("{label}", result.label).replace("{label}", result.label).replace("{quantity}", quantity).replace("{lowerBound}", result.lowerBound).replace("{price}", result.price).replace("{column}", result.column).replace("{row}", result.row)
+                    html: resultEmail[0].template.replace("{label}", result.label).replace("{label}", result.label).replace("{quantity}", quantity).replace("{lowerBound}", result.lowerBound).replace("{price}", result.price).replace("{department}", result.department).replace("{subDepartment}", result.subDepartment)
                 };
 
                 transporter.sendMail(mailOptions, function (error, info) {

@@ -10,7 +10,7 @@ download del catalogo
 
 
 
-gestione cliente - nome, cognome, ..
+gestione cliente - nome, cognome, ...
 carica documento pdf, excel, ecc
 aggiungere note
 calendario appuntamenti - che si collega alla scheda del cliente

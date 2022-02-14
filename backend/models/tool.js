@@ -7,12 +7,12 @@ const toolSchema = new Schema({
         type: String,
         required: true
     },
-    column: {
+    department: {
         type: String,
         required: true
     },
-    row: {
-        type: Number,
+    subDepartment: {
+        type: String,
         required: true
     },
     quantity: {

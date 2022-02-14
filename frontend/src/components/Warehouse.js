@@ -1,7 +1,5 @@
 import axios from "axios";
 import * as React from "react";
-import { db } from '../firebase-config'
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore'
 import Button from '@mui/material/Button';
 import Grid from '@mui/material/Grid';
 import Paper from '@mui/material/Paper';
@@ -13,11 +11,9 @@ import Grow from '@mui/material/Grow';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import Alert from '@mui/material/Alert';
 import Tooltip from '@mui/material/Tooltip';
-import DeleteIcon from '@material-ui/icons/Delete';
-import MenuIcon from '@material-ui/icons/Menu';
 import SystemUpdateAltIcon from '@material-ui/icons/SystemUpdateAlt';
 import IconButton from '@mui/material/IconButton';
-import FormControlLabel from '@mui/material/FormControlLabel';
+import TextField from '@mui/material/TextField';
 import './Classes.css'
 
 const Item = styled(Paper)(({ theme }) => ({
@@ -28,15 +24,17 @@ const Item = styled(Paper)(({ theme }) => ({
 }));
 
 function Warehouse(props) {
-    const [books, setBooks] = React.useState([])
+    const [timerUpd, setTimerUpd] = React.useState(setTimeout(() => { }, 1000))
+    const [tools, setTools] = React.useState([])
     const [employees, setEmployees] = React.useState([])
+    const [inheritedQuantity, setInheritedQuantity] = React.useState(0)
     const [label, setLabel] = React.useState("")
     const [quantity, setQuantity] = React.useState("")
     const [user, setUser] = React.useState("")
     const [lowerBound, setLowerBound] = React.useState("")
     const [price, setPrice] = React.useState("")
-    const [row, setRow] = React.useState("")
-    const [column, setColumn] = React.useState("")
+    const [department, setDepartment] = React.useState("")
+    const [subDepartment, setSubDepartment] = React.useState("")
     const [rowLayout, setRowLayout] = React.useState("")
     const [columnLayout, setColumnLayout] = React.useState("")
     const [library, setLibrary] = React.useState(null)
@@ -45,7 +43,7 @@ function Warehouse(props) {
     const [columnsLibrary, setColumnsLibrary] = React.useState([])
     const [open, setOpen] = React.useState(false);
     const [openLibraryUpdate, setOpenLibraryUpdate] = React.useState(false);
-    const [booksInShelf, setBooksInShelf] = React.useState([])
+    const [toolsInShelf, setToolsInShelf] = React.useState([])
     const [shelfRowSelected, setShelfRowSelected] = React.useState("")
     const [shelfColumnSelected, setShelfColumnSelected] = React.useState("")
     const [addBookFlag, setAddBookFlag] = React.useState(false);
@@ -78,7 +76,7 @@ function Warehouse(props) {
 
     // whenever the page reloads (renders), the hook "useEffect" is called
     React.useEffect(() => {
-        getBooks()
+        getTools()
         getLibraryStructure()
         getEmployees()
     }, [])
@@ -136,12 +134,23 @@ function Warehouse(props) {
     }, [layout])
 
     React.useEffect(() => {
-        // console.log("books: ", books)
-    }, [books])
+        // console.log("tools: ", tools)
+    }, [tools])
 
     React.useEffect(() => {
-        // console.log("booksInShelf: ", booksInShelf)
-    }, [booksInShelf])
+        // console.log("tools: ", tools)
+        setTimerUpd(setTimeout(() => {
+            getQuantity(label)
+        }, 1000))
+    }, [label])
+
+    React.useEffect(() => {
+        // console.log("inheritedQuantity: ", inheritedQuantity)
+    }, [inheritedQuantity])
+
+    React.useEffect(() => {
+        // console.log("toolsInShelf: ", toolsInShelf)
+    }, [toolsInShelf])
 
     React.useEffect(() => {
         // console.log("library: ", library)
@@ -174,6 +183,7 @@ function Warehouse(props) {
         setAddBookFlag(false);
         setDeleteBookFlag(false);
         setGetBookFlag(false);
+        setInheritedQuantity(0)
     };
 
     const handleChangeDeleteBook = () => {
@@ -182,6 +192,10 @@ function Warehouse(props) {
         setUpdateBookFlag(false);
         setGetBookFlag(false);
     };
+
+    const handleChangeInheritedQuantity = (event) => {
+        setInheritedQuantity(event)
+    }
 
     const createLibrary = () => {
         var structure = []
@@ -207,7 +221,7 @@ function Warehouse(props) {
 
     const handleClose = (l) => {
         setOpen(false)
-        setBooksInShelf([])
+        setToolsInShelf([])
         l.map((col) => {
             col.map((row) => {
                 row.color = "#964b00c7"
@@ -218,29 +232,29 @@ function Warehouse(props) {
 
     const handleCloseLibraryUpdate = (l) => {
         setOpenLibraryUpdate(false)
-        getBooks()
+        getTools()
         getLibraryStructure()
     };
 
     const showShelf = (row, column) => {
-        // I take the books in this shelf
-        const bInShelf = books.filter(book =>
+        // I take the tools in this shelf
+        const bInShelf = tools.filter(book =>
             book.row == row.toString() && book.column == alphabet[column].toString()
         )
         layout[column][row].color = "green"
         setLayout(layout)
-        setBooksInShelf(bInShelf)
+        setToolsInShelf(bInShelf)
         setShelfRowSelected(row.toString())
         setShelfColumnSelected(alphabet[column])
         setOpen(true)
     }
 
     // GET
-    const getBooks = async () => {
+    const getTools = async () => {
         axios.get(beUrl + 'tool')
             .then(res => {
                 // console.log("Tools: ", res.data)
-                setBooks(res.data)
+                setTools(res.data)
             })
     };
     const getLibraryStructure = async () => {
@@ -259,14 +273,14 @@ function Warehouse(props) {
     }
     const getBook = async (label) => {
         let count = 0
-        books.map((b) => {
+        tools.map((b) => {
             if (b.label.toUpperCase() === label.toUpperCase()) {
                 count = count + 1
                 layout[alphabet.indexOf(b.column)][parseInt(b.row)].color = "green"
-                getBooks()
+                getTools()
                 const timer = setTimeout(() => {
                     layout[alphabet.indexOf(b.column)][parseInt(b.row)].color = "#964b00c7"
-                    getBooks()
+                    getTools()
                 }, 7000);
                 return () => clearTimeout(timer);
             }
@@ -278,16 +292,23 @@ function Warehouse(props) {
 
     // POST
     let addBook = () => {
-        axios.post(beUrl + 'tool', { label: label, quantity: quantity, lowerBound: lowerBound, price: price, row: (parseInt(row) - 1).toString(), column: column, lastUser: '' })
+        axios.post(beUrl + 'tool', { label: label, quantity: quantity, lowerBound: lowerBound, price: price, department: department, subDepartment: subDepartment, lastUser: '' })
             .then(response => {
                 setConfermaAdd(true)
-                getBooks()
+                getTools()
             }).catch(error => {
                 // console.log("error")
                 setShowError(true)
             });
     }
 
+    let getQuantity = () => {
+        for (let t of tools) {
+            if (t.label.toUpperCase() === label.toUpperCase()) {
+                setInheritedQuantity(t.quantity)
+            }
+        }
+    }
     // PUT
     let updateBook = (label, q, user) => {
         var employeeIsPresent = false
@@ -300,7 +321,7 @@ function Warehouse(props) {
             setNonExistingEmployee("")
             var bookId = ""
             const newField = { label: label, quantity: q, lastUser: user.toLowerCase() } //, row: r - 1, column: c
-            books.map((b) => {
+            tools.map((b) => {
                 if (b.label.toUpperCase() === label.toUpperCase()) {
                     bookId = b._id
                 }
@@ -309,9 +330,9 @@ function Warehouse(props) {
                 axios.put(beUrl + "tool/" + bookId, newField).then(response => {
                     // console.log("Fatto!", response)
                     setConfermaUpdate(true)
-                    getBooks()
-                    console.log(parseInt(q) + 2)
-                    axios.post(beUrl + 'history/' + label, { user: user, tool: label, quantity: parseInt(q) })
+                    getTools()
+                    getQuantity()
+                    axios.post(beUrl + 'history/' + label, { user: user.toLowerCase(), tool: label, quantity: parseInt(q) })
                         .then(response => {
                             console.log("History added!")
                         }).catch(error => {
@@ -325,7 +346,7 @@ function Warehouse(props) {
                 setConfermaUpdate(false)
                 setNotFound(label)
             }
-            getBooks()
+            getTools()
         } else {
             setNonExistingEmployee(user)
         }
@@ -335,7 +356,7 @@ function Warehouse(props) {
     let updateLibraryLayout = (r, c) => {
         const newField = { rows: parseInt(r), columns: parseInt(c) }
         axios.put(beUrl + "structure/" + structureId, newField).then(response => {
-            getBooks()
+            getTools()
             getLibraryStructure()
             setOpenLibraryUpdate(false)
         }).catch((error) => {
@@ -347,7 +368,7 @@ function Warehouse(props) {
     // DELETE
     let deleteBook = (label) => {
         var bookId = ""
-        books.map((b) => {
+        tools.map((b) => {
             if (b.label.toUpperCase() === label.toUpperCase()) {
                 bookId = b._id
             }
@@ -356,13 +377,13 @@ function Warehouse(props) {
             axios.delete(beUrl + 'tool/' + bookId)
                 .then(() => {
                     setConfermaDelete(true)
-                    getBooks()
+                    getTools()
                 });
         } else {
             setConfermaDelete(false)
             setNotFound(label)
         }
-        getBooks()
+        getTools()
     }
 
     return (
@@ -402,8 +423,8 @@ function Warehouse(props) {
                             <input placeholder="quantità" onChange={(event) => { setQuantity(event.target.value) }} />
                             <input placeholder="quantità minima" onChange={(event) => { setLowerBound(event.target.value) }} />
                             <input placeholder="prezzo/pz" onChange={(event) => { setPrice(event.target.value) }} />
-                            <input placeholder="scaffale" onChange={(event) => { setColumn(event.target.value.toUpperCase()) }} />
-                            <input placeholder="ripiano" onChange={(event) => { setRow(event.target.value) }} />
+                            <input placeholder="reparto" onChange={(event) => { setDepartment(event.target.value) }} />
+                            <input placeholder="sotto-reparto" onChange={(event) => { setSubDepartment(event.target.value) }} />
                             <Button variant="outlined" style={{ color: 'white', backgroundColor: 'green' }} onClick={addBook}>Conferma</Button>
                         </div>
                     </Grow>
@@ -431,10 +452,37 @@ function Warehouse(props) {
                         {...(updateBookFlag ? { timeout: 1000 } : {})}
                     >
                         <div style={{ marginTop: '2rem' }}>
-                            <input placeholder="attrezzo" onChange={(event) => { setLabel(event.target.value) }} />
-                            <input placeholder="quantità" onChange={(event) => { setQuantity(event.target.value) }} />
-                            <input placeholder="utente" onChange={(event) => { setUser(event.target.value) }} />
-                            <Button style={{ color: 'white', backgroundColor: '#ffae1b', marginLeft: '1rem' }} onClick={() => { updateBook(label, quantity, user) }}>Conferma</Button>
+                            <div style={{ display: 'flex', justifyContent: 'center', textAlign: 'center', marginBottom: '2rem' }}>
+                                <input style={{ marginRight: '2rem' }} placeholder="attrezzo" onChange={(event) => {
+                                    setTimerUpd(clearTimeout(timerUpd))
+                                    setTimeout(() => {
+                                        setLabel(event.target.value)
+                                    }, 300)
+
+                                }} />
+                                <TextField
+                                    disabled
+                                    id="outlined-disabled"
+                                    label="quantità attuale presente"
+                                    value={inheritedQuantity}
+                                    onChange={(event) => { handleChangeInheritedQuantity(event) }}
+                                />
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'center', textAlign: 'center' }}>
+                                <input style={{ marginRight: '2rem' }} placeholder="utente (cognome)" onChange={(event) => { setUser(event.target.value.toLowerCase()) }} />
+                                <TextField
+                                    id="outlined-number"
+                                    label="quantità"
+                                    type="number"
+                                    InputLabelProps={{
+                                        shrink: true,
+                                    }}
+                                    onChange={(event) => { setQuantity(event.target.value) }}
+                                />
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'center', textAlign: 'center', marginTop: '2rem' }}>
+                                <Button style={{ color: 'white', backgroundColor: '#ffae1b', marginLeft: '1rem' }} onClick={() => { updateBook(label, quantity, user) }}>Conferma</Button>
+                            </div>
                         </div>
                     </Grow>
                 </Box>)
@@ -495,7 +543,7 @@ function Warehouse(props) {
                 }
             </div>
 
-            {/* Modal to show books in the selected shelf */}
+            {/* Modal to show tools in the selected shelf */}
             <Modal
                 open={open}
                 onClose={() => { handleClose(layout) }}
@@ -507,8 +555,8 @@ function Warehouse(props) {
                         Libri nel ripiano: {shelfColumnSelected + " - " + (parseInt(shelfRowSelected) + 1).toString()}
                     </Typography>
                     {
-                        (booksInShelf.length === 0) ? <span style={{ color: 'grey' }}>Nello ripiano selezionato non sono presenti attrezzi.</span> :
-                            booksInShelf.map((bis) => {
+                        (toolsInShelf.length === 0) ? <span style={{ color: 'grey' }}>Nello ripiano selezionato non sono presenti attrezzi.</span> :
+                            toolsInShelf.map((bis) => {
                                 return <li style={{ marginBottom: '0.5rem' }}>{bis.label} - {bis.quantity}</li>
                             })
                     }

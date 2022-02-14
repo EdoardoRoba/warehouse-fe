@@ -29,8 +29,7 @@ const toolSchema = new Schema({
     },
     lastUser: {
         type: String,
-        required: true,
-        enum: ['ianni', 'signoriello', 'roba', '']
+        required: false
     }
 }, { timestamps: true });
 

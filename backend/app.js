@@ -4,6 +4,7 @@ const Structure = require('./models/structure')
 const Tool = require('./models/tool')
 const EmailTemplate = require('./models/emailTemplate')
 const History = require('./models/History')
+const Employee = require('./models/Employee')
 const bodyParser = require('body-parser')
 var nodemailer = require('nodemailer');
 const app = express();
@@ -227,10 +228,10 @@ app.delete('/tool/:id', (req, res) => {
 
 // HISTORY
 // POST
-app.post('/history', (req, res) => {
+app.post('/history/:tool', (req, res) => {
     const history = new History({
         user: req.body.user,
-        tool: req.body.tool,
+        tool: req.params.tool,
         quantity: req.body.quantity
     })
     // console.log("history: ", history)
@@ -239,4 +240,31 @@ app.post('/history', (req, res) => {
     }).catch((error) => {
         console.log("error:", error)
     })
+})
+
+
+
+// EMPLOYEE
+// POST
+app.post('/employee', (req, res) => {
+    const employee = new Employee({
+        name: req.body.name,
+        lastName: req.body.lastName,
+        birth: req.body.birth,
+        fiscalCode: req.body.fiscalCode
+    })
+    // console.log("employee: ", employee)
+    employee.save().then((result) => {
+        res.send(result)
+    }).catch((error) => {
+        console.log("error:", error)
+    })
+})
+
+// GET
+app.get('/employee', (req, res) => {
+    // it gets all the element in that document
+    Employee.find().then((result) => {
+        res.send(result);
+    }).catch((error) => { console.log("error: ", error) })
 })

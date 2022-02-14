@@ -29,6 +29,7 @@ const Item = styled(Paper)(({ theme }) => ({
 
 function Warehouse(props) {
     const [books, setBooks] = React.useState([])
+    const [employees, setEmployees] = React.useState([])
     const [label, setLabel] = React.useState("")
     const [quantity, setQuantity] = React.useState("")
     const [user, setUser] = React.useState("")
@@ -56,6 +57,7 @@ function Warehouse(props) {
     const [confermaDelete, setConfermaDelete] = React.useState(false);
     const [notFound, setNotFound] = React.useState("");
     const [showError, setShowError] = React.useState(false);
+    const [nonExistingEmployee, setNonExistingEmployee] = React.useState("");
     // const handleOpen = () => setOpen(true);
 
     const structureId = "6205a1c27f6cda42c2064a0f"
@@ -78,6 +80,7 @@ function Warehouse(props) {
     React.useEffect(() => {
         getBooks()
         getLibraryStructure()
+        getEmployees()
     }, [])
 
     React.useEffect(() => {
@@ -116,33 +119,40 @@ function Warehouse(props) {
     }, [showError]);
 
     React.useEffect(() => {
+        const timer = setTimeout(() => {
+            setNonExistingEmployee("")
+        }, 5000);
+        return () => clearTimeout(timer);
+    }, [nonExistingEmployee]);
+
+    React.useEffect(() => {
         if (library !== null) {
             createLibrary()
         }
     }, [library])
 
     React.useEffect(() => {
-        console.log("layout: ", layout)
+        // console.log("layout: ", layout)
     }, [layout])
 
     React.useEffect(() => {
-        console.log("books: ", books)
+        // console.log("books: ", books)
     }, [books])
 
     React.useEffect(() => {
-        console.log("booksInShelf: ", booksInShelf)
+        // console.log("booksInShelf: ", booksInShelf)
     }, [booksInShelf])
 
     React.useEffect(() => {
-        console.log("library: ", library)
+        // console.log("library: ", library)
     }, [library])
 
     React.useEffect(() => {
-        console.log("columnsLibrary: ", columnsLibrary)
+        // console.log("columnsLibrary: ", columnsLibrary)
     }, [columnsLibrary])
 
     React.useEffect(() => {
-        console.log("rowsLibrary: ", rowsLibrary)
+        // console.log("rowsLibrary: ", rowsLibrary)
     }, [rowsLibrary])
 
     const handleChangeAddBook = () => {
@@ -229,17 +239,24 @@ function Warehouse(props) {
     const getBooks = async () => {
         axios.get(beUrl + 'tool')
             .then(res => {
-                console.log("Tools: ", res.data)
+                // console.log("Tools: ", res.data)
                 setBooks(res.data)
             })
     };
     const getLibraryStructure = async () => {
         axios.get(beUrl + 'structure')
             .then(res => {
-                console.log("Library: ", res.data)
+                // console.log("Library: ", res.data)
                 setLibrary(res.data)
             })
     };
+    const getEmployees = async () => {
+        axios.get(beUrl + 'employee')
+            .then(res => {
+                // console.log("Employees: ", res.data)
+                setEmployees(res.data)
+            })
+    }
     const getBook = async (label) => {
         let count = 0
         books.map((b) => {
@@ -266,35 +283,53 @@ function Warehouse(props) {
                 setConfermaAdd(true)
                 getBooks()
             }).catch(error => {
-                console.log("error")
+                // console.log("error")
                 setShowError(true)
             });
     }
 
     // PUT
     let updateBook = (label, q, user) => {
-        var bookDoc = ""
-        var bookId = ""
-        const newField = { label: label, quantity: q, lastUser: user.toLowerCase() } //, row: r - 1, column: c
-        books.map((b) => {
-            if (b.label.toUpperCase() === label.toUpperCase()) {
-                bookId = b._id
+        var employeeIsPresent = false
+        employees.map((e) => {
+            if (e.lastName === user.toLowerCase()) {
+                employeeIsPresent = true
             }
         })
-        if (bookId !== "") {
-            axios.put(beUrl + "tool/" + bookId, newField).then(response => {
-                console.log("Fatto!", response)
-                setConfermaUpdate(true)
-                getBooks()
-            }).catch((error) => {
-                console.log("error: ", error)
-                setShowError(true)
-            });
+        if (employeeIsPresent) {
+            setNonExistingEmployee("")
+            var bookId = ""
+            const newField = { label: label, quantity: q, lastUser: user.toLowerCase() } //, row: r - 1, column: c
+            books.map((b) => {
+                if (b.label.toUpperCase() === label.toUpperCase()) {
+                    bookId = b._id
+                }
+            })
+            if (bookId !== "") {
+                axios.put(beUrl + "tool/" + bookId, newField).then(response => {
+                    // console.log("Fatto!", response)
+                    setConfermaUpdate(true)
+                    getBooks()
+                    console.log(parseInt(q) + 2)
+                    axios.post(beUrl + 'history/' + label, { user: user, tool: label, quantity: parseInt(q) })
+                        .then(response => {
+                            console.log("History added!")
+                        }).catch(error => {
+                            setShowError(true)
+                        });
+                }).catch((error) => {
+                    // console.log("error: ", error)
+                    setShowError(true)
+                });
+            } else {
+                setConfermaUpdate(false)
+                setNotFound(label)
+            }
+            getBooks()
         } else {
-            setConfermaUpdate(false)
-            setNotFound(label)
+            setNonExistingEmployee(user)
         }
-        getBooks()
+
     }
 
     let updateLibraryLayout = (r, c) => {
@@ -303,13 +338,14 @@ function Warehouse(props) {
             getBooks()
             getLibraryStructure()
             setOpenLibraryUpdate(false)
-        }).catch((error) => { console.log("error: ", error) });
+        }).catch((error) => {
+            console.log("error: ", error)
+        });
 
     }
 
     // DELETE
     let deleteBook = (label) => {
-        var userDoc = ""
         var bookId = ""
         books.map((b) => {
             if (b.label.toUpperCase() === label.toUpperCase()) {
@@ -333,7 +369,7 @@ function Warehouse(props) {
         <div style={{ width: '100vw' }}>
             <div style={{ display: 'flex', justifyContent: 'center', textAlign: 'center' }}>
                 <h1 style={{ fontFamily: 'times', marginLeft: '1rem', marginRight: 'auto' }}>Magazzino</h1>
-                <Tooltip style={{ marginRight: '1rem' }} label="Aggiorna struttura libreria">
+                <Tooltip style={{ marginRight: '1rem' }} title="Aggiorna struttura magazzino">
                     <IconButton onClick={() => { setOpenLibraryUpdate(true) }}>
                         <SystemUpdateAltIcon />
                     </IconButton>
@@ -433,6 +469,9 @@ function Warehouse(props) {
                 }
                 {
                     (showError === false) ? "" : <Alert style={{ width: '50%', marginLeft: 'auto', marginRight: 'auto', marginTop: '1rem' }} severity="error">Errore. Controlla la connessione o i dati inseriti.</Alert>
+                }
+                {
+                    (nonExistingEmployee === "") ? "" : <Alert style={{ width: '50%', marginLeft: 'auto', marginRight: 'auto', marginTop: '1rem' }} severity="error">Utente inserito non presente.</Alert>
                 }
             </div>
 

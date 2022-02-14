@@ -27,7 +27,7 @@ function Warehouse(props) {
     const [timerUpd, setTimerUpd] = React.useState(setTimeout(() => { }, 1000))
     const [tools, setTools] = React.useState([])
     const [employees, setEmployees] = React.useState([])
-    const [inheritedQuantity, setInheritedQuantity] = React.useState(0)
+    const [inheritedQuantity, setInheritedQuantity] = React.useState(-1)
     const [label, setLabel] = React.useState("")
     const [quantity, setQuantity] = React.useState("")
     const [user, setUser] = React.useState("")
@@ -135,17 +135,22 @@ function Warehouse(props) {
 
     React.useEffect(() => {
         // console.log("tools: ", tools)
+        getQuantity()
     }, [tools])
 
     React.useEffect(() => {
-        // console.log("tools: ", tools)
-        setTimerUpd(setTimeout(() => {
-            getQuantity(label)
-        }, 1000))
+        console.log("label: ", label)
+        // setTimerUpd(setTimeout(() => {
+        getQuantity(label)
+        // clearTimeout(timerUpd)
+        // }, 1000))
     }, [label])
 
     React.useEffect(() => {
         // console.log("inheritedQuantity: ", inheritedQuantity)
+        if (inheritedQuantity === 0) {
+            setNotFound(true)
+        }
     }, [inheritedQuantity])
 
     React.useEffect(() => {
@@ -183,7 +188,7 @@ function Warehouse(props) {
         setAddBookFlag(false);
         setDeleteBookFlag(false);
         setGetBookFlag(false);
-        setInheritedQuantity(0)
+        // setInheritedQuantity(0)
     };
 
     const handleChangeDeleteBook = () => {
@@ -306,12 +311,21 @@ function Warehouse(props) {
         for (let t of tools) {
             if (t.label.toUpperCase() === label.toUpperCase()) {
                 setInheritedQuantity(t.quantity)
+            } else if (label !== "") {
+                setInheritedQuantity(0)
+                // setNotFound(true)
             }
         }
     }
     // PUT
     let updateBook = (label, q, user) => {
         var employeeIsPresent = false
+        var oldQuantity
+        for (let t of tools) {
+            if (t.label.toUpperCase() === label.toUpperCase()) {
+                oldQuantity = t.quantity
+            }
+        }
         employees.map((e) => {
             if (e.lastName === user.toLowerCase()) {
                 employeeIsPresent = true
@@ -320,7 +334,7 @@ function Warehouse(props) {
         if (employeeIsPresent) {
             setNonExistingEmployee("")
             var bookId = ""
-            const newField = { label: label, quantity: q, lastUser: user.toLowerCase() } //, row: r - 1, column: c
+            const newField = { label: label, quantity: oldQuantity + parseInt(q), lastUser: user.toLowerCase() } //, row: r - 1, column: c
             tools.map((b) => {
                 if (b.label.toUpperCase() === label.toUpperCase()) {
                     bookId = b._id
@@ -331,8 +345,7 @@ function Warehouse(props) {
                     // console.log("Fatto!", response)
                     setConfermaUpdate(true)
                     getTools()
-                    getQuantity()
-                    axios.post(beUrl + 'history/' + label, { user: user.toLowerCase(), tool: label, quantity: parseInt(q) })
+                    axios.post(beUrl + 'history/' + label, { user: user.toLowerCase(), tool: label, quantity: oldQuantity + parseInt(q) })
                         .then(response => {
                             console.log("History added!")
                         }).catch(error => {
@@ -454,19 +467,25 @@ function Warehouse(props) {
                         <div style={{ marginTop: '2rem' }}>
                             <div style={{ display: 'flex', justifyContent: 'center', textAlign: 'center', marginBottom: '2rem' }}>
                                 <input style={{ marginRight: '2rem' }} placeholder="attrezzo" onChange={(event) => {
-                                    setTimerUpd(clearTimeout(timerUpd))
+                                    clearTimeout(timerUpd)
                                     setTimeout(() => {
                                         setLabel(event.target.value)
-                                    }, 300)
-
+                                    }, 1000)
                                 }} />
-                                <TextField
+                                {inheritedQuantity === -1 ? <TextField
+                                    disabled
+                                    id="outlined-disabled"
+                                    label="quantità attuale presente"
+                                    value={0}
+                                    onChange={(event) => { handleChangeInheritedQuantity(event) }}
+                                /> : <TextField
                                     disabled
                                     id="outlined-disabled"
                                     label="quantità attuale presente"
                                     value={inheritedQuantity}
                                     onChange={(event) => { handleChangeInheritedQuantity(event) }}
-                                />
+                                />}
+
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'center', textAlign: 'center' }}>
                                 <input style={{ marginRight: '2rem' }} placeholder="utente (cognome)" onChange={(event) => { setUser(event.target.value.toLowerCase()) }} />

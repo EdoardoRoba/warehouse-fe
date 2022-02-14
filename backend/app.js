@@ -232,7 +232,8 @@ app.post('/history/:tool', (req, res) => {
     const history = new History({
         user: req.body.user,
         tool: req.params.tool,
-        quantity: req.body.quantity
+        totalQuantity: req.body.totalQuantity,
+        update: req.body.update
     })
     // console.log("history: ", history)
     history.save().then((result) => {

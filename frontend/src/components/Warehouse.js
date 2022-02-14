@@ -345,7 +345,7 @@ function Warehouse(props) {
                     // console.log("Fatto!", response)
                     setConfermaUpdate(true)
                     getTools()
-                    axios.post(beUrl + 'history/' + label, { user: user.toLowerCase(), tool: label, quantity: oldQuantity + parseInt(q) })
+                    axios.post(beUrl + 'history/' + label, { user: user.toLowerCase(), tool: label, totalQuantity: oldQuantity + parseInt(q), update: parseInt(q) })
                         .then(response => {
                             console.log("History added!")
                         }).catch(error => {
@@ -451,7 +451,11 @@ function Warehouse(props) {
                         {...(getBookFlag ? { timeout: 1000 } : {})}
                     >
                         <div style={{ marginTop: '2rem' }}>
-                            <input placeholder="attrezzo" onChange={(event) => { setLabel(event.target.value) }} />
+                            <input placeholder="attrezzo" onChange={(event) => {
+                                setTimeout(() => {
+                                    setLabel(event.target.value)
+                                }, 1000)
+                            }} />
                             <Button variant="outlined" style={{ color: 'white', backgroundColor: 'green' }} onClick={() => { getBook(label) }}>Conferma</Button>
                         </div>
                     </Grow>

@@ -11,7 +11,11 @@ const historySchema = new Schema({
         type: String,
         required: true
     },
-    quantity: {
+    totalQuantity: {
+        type: Number,
+        required: true
+    },
+    update: {
         type: Number,
         required: true
     }

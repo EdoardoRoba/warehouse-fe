@@ -1,7 +1,7 @@
 import './App.css';
 import * as React from "react";
 import Home from './components/Home';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
 import Warehouse from './components/Warehouse';
 import History from './components/History';
 import Customers from './components/Customers';
@@ -41,7 +41,7 @@ function App() {
           </Container>
         </AppBar>
         <Routes>
-          <Route exact path='/' element={< Home />}></Route>
+          <Route exact path="/" element={<Warehouse replace to="/warehouse" />} />
           <Route exact path='/warehouse' element={< Warehouse />}></Route>
           <Route exact path='/history' element={< History />}></Route>
           <Route exact path='/customers' element={< Customers />}></Route>

@@ -243,6 +243,14 @@ app.post('/history/:tool', (req, res) => {
     })
 })
 
+// GET
+app.get('/history', (req, res) => {
+    // it gets all the element in that document
+    History.find().then((result) => {
+        res.send(result);
+    }).catch((error) => { console.log("error: ", error) })
+})
+
 
 
 // EMPLOYEE

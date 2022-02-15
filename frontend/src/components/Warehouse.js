@@ -11,9 +11,16 @@ import Grow from '@mui/material/Grow';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import Alert from '@mui/material/Alert';
 import Tooltip from '@mui/material/Tooltip';
+import Accordion from "@mui/material/Accordion";
+import AccordionDetails from "@mui/material/AccordionDetails";
+import AccordionSummary from "@mui/material/AccordionSummary";
 import SystemUpdateAltIcon from '@material-ui/icons/SystemUpdateAlt';
+import ExpandMoreIcon from "@material-ui/icons/ExpandMore";
 import IconButton from '@mui/material/IconButton';
 import TextField from '@mui/material/TextField';
+import Switch from '@mui/material/Switch';
+import Fade from '@mui/material/Fade';
+import FormControlLabel from '@mui/material/FormControlLabel';
 import './Classes.css'
 
 const Item = styled(Paper)(({ theme }) => ({
@@ -56,6 +63,10 @@ function Warehouse(props) {
     const [notFound, setNotFound] = React.useState("");
     const [showError, setShowError] = React.useState(false);
     const [nonExistingEmployee, setNonExistingEmployee] = React.useState("");
+    const [departments, setDepartments] = React.useState([]);
+    const [subDepartments, setSubDepartments] = React.useState([]);
+    const [checked, setChecked] = React.useState(false);
+    const [openPapers, setOpenPapers] = React.useState({});
     // const handleOpen = () => setOpen(true);
 
     const structureId = "6205a1c27f6cda42c2064a0f"
@@ -74,11 +85,20 @@ function Warehouse(props) {
         p: 4,
     };
 
+    const Item = styled(Paper)(({ theme }) => ({
+        ...theme.typography.body2,
+        textAlign: 'center',
+        color: theme.palette.text.secondary,
+        height: 60,
+        lineHeight: '60px',
+    }));
+
     // whenever the page reloads (renders), the hook "useEffect" is called
     React.useEffect(() => {
         getTools()
         getLibraryStructure()
         getEmployees()
+        getDepartments()
     }, [])
 
     React.useEffect(() => {
@@ -134,12 +154,24 @@ function Warehouse(props) {
     }, [layout])
 
     React.useEffect(() => {
+        // console.log("departments: ", departments) openPapers: [openPapers, openDep] })
+    }, [departments])
+
+    React.useEffect(() => {
+        // console.log("subDepartments: ", subDepartments)
+    }, [subDepartments])
+
+    React.useEffect(() => {
         // console.log("tools: ", tools)
         getQuantity()
     }, [tools])
 
     React.useEffect(() => {
-        console.log("label: ", label)
+        // console.log("openPapers: ", openPapers)
+    }, [openPapers])
+
+    React.useEffect(() => {
+        // console.log("label: ", label)
         // setTimerUpd(setTimeout(() => {
         getQuantity(label)
         // clearTimeout(timerUpd)
@@ -201,6 +233,10 @@ function Warehouse(props) {
     const handleChangeInheritedQuantity = (event) => {
         setInheritedQuantity(event)
     }
+
+    const handleChangeChecked = () => {
+        setChecked((prev) => !prev);
+    };
 
     const createLibrary = () => {
         var structure = []
@@ -274,6 +310,24 @@ function Warehouse(props) {
             .then(res => {
                 // console.log("Employees: ", res.data)
                 setEmployees(res.data)
+            })
+    }
+    const getDepartments = async () => {
+        axios.get(beUrl + 'structure')
+            .then(res => {
+                var depts = res.data
+                var openDeps = {}
+                var subds = depts.filter((d) => d.father !== undefined)
+                for (var deps of subds) {
+                    openDeps[deps.name] = false
+                }
+                setSubDepartments(subds)
+                var ds = depts.filter((d) => d.father === undefined)
+                setDepartments(ds)
+                for (var depd of ds) {
+                    openDeps[depd.name] = false
+                }
+                setOpenPapers(openDeps)
             })
     }
     const getBook = async (label) => {
@@ -376,6 +430,12 @@ function Warehouse(props) {
             console.log("error: ", error)
         });
 
+    }
+
+    let updateOpenPapers = (dep) => {
+        var oD = { ...openPapers }
+        oD[dep] = !oD[dep]
+        setOpenPapers(oD)
     }
 
     // DELETE
@@ -546,8 +606,8 @@ function Warehouse(props) {
                 }
             </div>
 
-            {/* LIBRARY */}
-            <h2 style={{ marginTop: '5rem', fontFamily: 'times', marginLeft: '1rem' }}>Scaffali:</h2>
+            {/* WAREHOUSE */}
+            {/* <h2 style={{ marginTop: '5rem', fontFamily: 'times', marginLeft: '1rem' }}>Scaffali:</h2>
             <div style={{ width: '100%', display: 'flex', justifyContent: 'center', textAlign: 'center' }}>
                 {
                     columnsLibrary.map((c) => {
@@ -564,7 +624,46 @@ function Warehouse(props) {
                         </div>
                     })
                 }
+            </div> */}
+            <h2 style={{ marginTop: '5rem', fontFamily: 'times', marginLeft: '1rem' }}>Reparti:</h2>
+            <div style={{ width: '80%', marginLeft: 'auto', marginRight: 'auto', marginTop: '4rem' }}>
+                {
+                    departments.map((d) => {
+                        return <Accordion
+                            expanded={openPapers[d.name] || false}
+                            onChange={() => { updateOpenPapers(d.name) }}
+                        >
+                            <AccordionSummary
+                                expandIcon={<ExpandMoreIcon />}
+                                aria-controls="panel1bh-content"
+                            >
+                                <Typography variant="h4" sx={{ width: "33%", flexShrink: 0 }}>
+                                    {d.name.toUpperCase()}
+                                </Typography>
+                                {/* <Typography sx={{ color: "text.secondary" }}>
+                                    I am an accordion
+                                </Typography> */}
+                            </AccordionSummary>
+                            <AccordionDetails>
+                                {
+                                    subDepartments.map((sd) => {
+                                        if (sd.father === d.name) {
+                                            return <div style={{ display: 'flex', justifyContent: 'center', textAlign: 'center', marginBottom: '1rem' }}>
+                                                <Typography>
+                                                    {sd.name.toUpperCase()}
+                                                </Typography>
+                                            </div>
+                                        }
+                                    })
+                                }
+                            </AccordionDetails>
+                        </Accordion>
+
+                    })
+                }
             </div>
+
+
 
             {/* Modal to show tools in the selected shelf */}
             <Modal

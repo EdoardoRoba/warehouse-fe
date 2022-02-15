@@ -24,7 +24,7 @@ function App() {
     <Router>
       <div>
         <AppBar position="static">
-          <Container maxWidth="xl">
+          <Container maxWidth="xl" style={{ marginLeft: '0' }}>
             <Toolbar disableGutters>
               <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' } }}>
                 {pages.map((page) => (

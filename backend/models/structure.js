@@ -3,13 +3,13 @@ const Schema = mongoose.Schema // defines the schema of the data
 
 // schema
 const structureSchema = new Schema({
-    columns: {
-        type: Number,
+    name: {
+        type: String,
         required: true
     },
-    rows: {
-        type: Number,
-        required: true
+    father: {
+        type: String,
+        required: false
     }
 }, { timestamps: true });
 

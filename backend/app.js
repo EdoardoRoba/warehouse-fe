@@ -78,8 +78,8 @@ app.post('/sendEmail', (req, res) => {
 // POST
 app.post('/structure', (req, res) => {
     const structure = new Structure({
-        columns: req.body.columns,
-        rows: req.body.rows
+        name: req.body.name,
+        father: req.body.father
     })
     structure.save().then((result) => {
         res.send(result)
